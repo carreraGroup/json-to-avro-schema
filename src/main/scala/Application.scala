@@ -1,9 +1,28 @@
 package io.carrera.jsontoavroschema
 
-object Application extends App {
-  println("Hello world!")
+import scala.io.Source
+import scala.util.Using
 
-  def cube(x: Int) = {
-    x * x * x
+object Application extends App {
+  getInputFilePath(args) match {
+    case Some(path) =>
+      for {
+        content <- loadFile(path)
+        value = readJson(content)
+      } yield value
+    case None => println("Usage: sbt \"run inputFile\"")
   }
+
+  def readJson(content: String) = {
+    ujson.read(content)
+  }
+
+  def loadFile(path: String) =
+    Using(Source.fromFile(path)) { source =>
+      source.getLines.mkString
+    }
+
+  def getInputFilePath(args: Array[String]) =
+    args.headOption
+
 }
