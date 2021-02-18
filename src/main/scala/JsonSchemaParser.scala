@@ -33,7 +33,7 @@ object JsonSchemaParser {
       ref <- parseUri(obj, "$ref")
       title <- parseString(obj, "title")
       desc <- parseString(obj, "description")
-      multipleOf <- parseNumber(obj, "multipleOf")
+      multipleOf <- parseMultipleOf(obj)
     } yield JsonSchema(id, ref, title, desc, multipleOf)
 
   def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
@@ -41,6 +41,15 @@ object JsonSchemaParser {
     // https://tools.ietf.org/html/draft-wright-json-schema-01#section-7
     parseUri(obj, "$schema")
   }
+
+  def parseMultipleOf(obj: ujson.Obj) =
+    for {
+      num <- parseNumber(obj, "multipleOf")
+      result <- num match {
+        case Some(v) => if (v <= 0) Left(ParserError("multipleOf must be > 0")) else Right(num)
+        case None => Right(None)
+      }
+    } yield result
 
   private def parseUri(value: ujson.Obj, elemName: String): Either[ParserError, Option[Uri]] = {
     val parser = (node: ujson.Value) => {

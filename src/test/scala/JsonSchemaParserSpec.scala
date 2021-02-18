@@ -117,4 +117,13 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Some(multipleOf) = root.schema.multipleOf
     multipleOf should be(2)
   }
+
+  it should "fail if multipleOf is <= 0" in {
+    val input = ujson.Obj(
+      "multipleOf" -> 0
+    )
+
+    val Left(err) = JsonSchemaParser.parse(input)
+    err.getMessage should be("multipleOf must be > 0")
+  }
 }
