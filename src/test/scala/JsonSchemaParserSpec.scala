@@ -4,8 +4,14 @@ import io.lemonlabs.uri.Uri
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 
-
 class JsonSchemaParserSpec extends AnyFlatSpec {
+
+  it should "fail if root is not an Object" in {
+    val input = ujson.Arr(1,2,3)
+    val Left(err) = JsonSchemaParser.parse(input)
+    err.getMessage should be("schema must be an object")
+  }
+
   it should "parse the $schema URI" in {
     val input = ujson.Obj(
         "$schema" -> "http://example.com/version/schema"
@@ -42,11 +48,5 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(root) = JsonSchemaParser.parse(input)
     val Some(id) = root.schema.id
     id should be(Uri.parse("urn:uuid:ee564b8a-7a87-4125-8c96-e9f123d6766f"))
-  }
-
-  it should "fail if root is not an Object" in {
-    val input = ujson.Arr(1,2,3)
-    val Left(err) = JsonSchemaParser.parse(input)
-    err.getMessage should be("schema must be an object")
   }
 }
