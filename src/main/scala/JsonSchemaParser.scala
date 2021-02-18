@@ -1,9 +1,10 @@
 package io.carrera.jsontoavroschema
 import io.lemonlabs.uri.Url
+import ujson.Value
 
 import scala.util.Try
 
-case class JsonSchema(schemaId: Url)
+case class JsonSchema(schemaUri: Option[Url])
 
 object JsonSchemaParser {
 
@@ -14,18 +15,18 @@ object JsonSchemaParser {
       schemaUri <- parseSchemaUri(value)
     } yield JsonSchema(schemaUri)
 
-  def parseSchemaUri(value: ujson.Value) = {
-    for {
-      schemaNode <-
-        Try(value("$schema"))
-          .toEither
-          .left
-          .map(err => ParserError("$schema must be specified", err))
-      uriStr <-schemaNode.strOpt.toRight(ParserError("No URI exists for $schema"))
-      uri <- Url.parseOption(uriStr).toRight(ParserError("Invalid schema URI"))
-      //TODO: The spec says the schema uri must include a scheme. Validate it does.
-      // https://tools.ietf.org/html/draft-wright-json-schema-01#section-7
-    } yield uri
+  def parseSchemaUri(value: ujson.Value): Either[ParserError, Option[Url]] = {
+    Try(value("$schema")).toOption match {
+      case Some(node) => {
+        for {
+          uriStr <- node.strOpt.toRight(ParserError("$schema must be a URI string"))
+          uri <- Url.parseOption(uriStr).toRight(ParserError("Invalid $schema URI"))
+          //TODO: The spec says the schema uri must include a scheme. Validate it does.
+          // https://tools.ietf.org/html/draft-wright-json-schema-01#section-7
+        } yield Some(uri)
+      }
+      case None => Right(None)
+    }
   }
 }
 
