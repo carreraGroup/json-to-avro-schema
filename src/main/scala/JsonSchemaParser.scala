@@ -3,7 +3,10 @@ import io.lemonlabs.uri.Uri
 
 case class RootJsonSchema(schemaUri: Option[Uri], schema: JsonSchema)
 
-case class JsonSchema(id: Option[Uri])
+case class JsonSchema(
+                       id: Option[Uri],
+                       ref: Option[Uri],
+                     )
 
 object JsonSchemaParser {
 
@@ -24,7 +27,12 @@ object JsonSchemaParser {
   def parseSubSchema(obj: ujson.Obj): Either[ParserError, JsonSchema] =
     for {
       id <- parseId(obj)
-    } yield JsonSchema(id)
+      ref <- parseRef(obj)
+    } yield JsonSchema(id, ref)
+
+  def parseRef(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
+    parseUri(obj, "$ref")
+  }
 
   def parseId(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
     parseUri(obj, "$id")

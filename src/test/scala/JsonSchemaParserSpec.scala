@@ -49,4 +49,16 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Some(id) = root.schema.id
     id should be(Uri.parse("urn:uuid:ee564b8a-7a87-4125-8c96-e9f123d6766f"))
   }
+
+  it should "parse ref" in {
+    val input = ujson.Obj(
+      // can be any uri reference
+      // https://tools.ietf.org/html/draft-wright-json-schema-01#section-8
+      // https://tools.ietf.org/html/rfc3986#section-4.1
+      "$ref" -> "#foo"
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(id) = root.schema.ref
+    id should be(Uri.parse("#foo"))
+  }
 }
