@@ -14,7 +14,9 @@ case class JsonSchema(
                        minimum: Option[Double],
                        exclusiveMinimum: Option[Double],
                        maxLength: Option[Int],
-                       minLength: Int
+                       minLength: Int,
+                       pattern: Option[String],
+                       items: Seq[JsonSchema]
                      )
 
 object JsonSchemaParser {
@@ -46,6 +48,8 @@ object JsonSchemaParser {
       exclMin <- parseNumber(obj, "exclusiveMinimum")
       maxLen <- parsePositiveInteger(obj, "maxLength")
       minLen <- parseMinLength(obj)
+      pattern <- parsePattern(obj)
+      items <- parseItems(obj)
     } yield
       JsonSchema(
         id,
@@ -59,7 +63,26 @@ object JsonSchemaParser {
         exclMin,
         maxLen,
         minLen,
+        pattern,
+        items,
       )
+
+  private def parseItems(value: ujson.Obj) = {
+    val elemName = "items"
+    val parser = (node: ujson.Value) => {
+      for {
+        items <- node match {
+          case n: ujson.Obj => parseSubSchema(n)
+        }
+      } yield Seq(items)
+    }
+    if (value.obj.keys.exists(k => k == elemName)) {
+      val node = value(elemName)
+      parser(node)
+    }
+    else
+      Right(Seq())
+  }
 
   private def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
     //TODO: The spec says the schema uri must include a scheme. Validate it does.
@@ -81,6 +104,11 @@ object JsonSchemaParser {
       num <- parsePositiveInteger(obj, "minLength")
       result = num.getOrElse(0)
     } yield result
+
+  private def parsePattern(obj: ujson.Obj) = {
+    //TODO: verify value is a ECMA 262 regex
+    parseString(obj, "pattern")
+  }
 
   private def parsePositiveInteger(obj: ujson.Obj, elemName: String) =
     for {

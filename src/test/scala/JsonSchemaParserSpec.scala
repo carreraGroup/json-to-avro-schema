@@ -205,4 +205,34 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Left(err) = JsonSchemaParser.parse(input)
     err.getMessage should be("minLength must be >= 0")
   }
+
+  it should "parse pattern" in {
+    val input = ujson.Obj(
+      "pattern" -> "^(\\([0-9]{3}\\))?[0-9]{3}-[0-9]{4}$"
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(pattern) = root.schema.pattern
+    pattern should be("^(\\([0-9]{3}\\))?[0-9]{3}-[0-9]{4}$")
+  }
+
+  it should "parse schema items" in {
+    val input = ujson.Obj(
+      "items" -> ujson.Obj("$id" -> "#foo")
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    val items = root.schema.items
+    val Some(innerId) = items.head.id
+    innerId should be(Uri.parse("#foo"))
+  }
+
+  ignore should "parse array of items" in {
+
+  }
+
+  it should "default items to empty list" in {
+    val input = ujson.Obj("$id" -> "#foo")
+    val Right(root) = JsonSchemaParser.parse(input)
+    val items = root.schema.items
+    items should be(Seq())
+  }
 }
