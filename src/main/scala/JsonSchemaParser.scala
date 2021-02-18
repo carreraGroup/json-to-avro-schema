@@ -6,7 +6,8 @@ case class RootJsonSchema(schemaUri: Option[Uri], schema: JsonSchema)
 case class JsonSchema(
                        id: Option[Uri],
                        ref: Option[Uri],
-                       title: Option[String]
+                       title: Option[String],
+                       desc: Option[String]
                      )
 
 object JsonSchemaParser {
@@ -30,7 +31,8 @@ object JsonSchemaParser {
       id <- parseUri(obj, "$id")
       ref <- parseUri(obj, "$ref")
       title <- parseString(obj, "title")
-    } yield JsonSchema(id, ref, title)
+      desc <- parseString(obj, "description")
+    } yield JsonSchema(id, ref, title, desc)
 
   def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
     //TODO: The spec says the schema uri must include a scheme. Validate it does.

@@ -78,4 +78,13 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Left(err) = JsonSchemaParser.parse(input)
     err.getMessage should be("title must be a String")
   }
+
+  it should "parse description" in {
+    val input = ujson.Obj(
+      "description" -> "this is a pretty useless schema"
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(desc) = root.schema.desc
+    desc should be("this is a pretty useless schema")
+  }
 }
