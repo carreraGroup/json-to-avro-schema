@@ -13,6 +13,7 @@ case class JsonSchema(
                        exclusiveMaximum: Option[Double],
                        minimum: Option[Double],
                        exclusiveMinimum: Option[Double],
+                       maxLength: Option[Int]
                      )
 
 object JsonSchemaParser {
@@ -42,6 +43,7 @@ object JsonSchemaParser {
       exclMax <- parseNumber(obj, "exclusiveMaximum")
       min <- parseNumber(obj, "minimum")
       exclMin <- parseNumber(obj, "exclusiveMinimum")
+      maxLen <- parsePositiveInteger(obj, "maxLength")
     } yield
       JsonSchema(
         id,
@@ -53,21 +55,41 @@ object JsonSchemaParser {
         exclMax,
         min,
         exclMin,
+        maxLen
       )
 
-  def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
+  private def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
     //TODO: The spec says the schema uri must include a scheme. Validate it does.
     // https://tools.ietf.org/html/draft-wright-json-schema-01#section-7
     parseUri(obj, "$schema")
   }
 
-  def parseMultipleOf(obj: ujson.Obj) =
+  private def parseMultipleOf(obj: ujson.Obj) =
     for {
       num <- parseNumber(obj, "multipleOf")
       result <- num match {
         case Some(v) => if (v <= 0) Left(ParserError("multipleOf must be > 0")) else Right(num)
         case None => Right(None)
       }
+    } yield result
+
+  private def parsePositiveInteger(obj: ujson.Obj, elemName: String) =
+    for {
+      num <- parseInteger(obj, elemName)
+      result <- num match {
+        case Some(n) =>
+          if (n < 0)
+            Left(ParserError(s"$elemName must be >= 0"))
+          else
+            Right(Some(n))
+        case None => Right(None)
+      }
+    } yield result
+
+  private def parseInteger(obj: ujson.Obj, elemName: String) =
+    for {
+      num <- parseNumber(obj, elemName)
+      result = num.map(_.toInt)
     } yield result
 
   private def parseUri(value: ujson.Obj, elemName: String): Either[ParserError, Option[Uri]] = {

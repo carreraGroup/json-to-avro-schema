@@ -164,4 +164,21 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Some(exclMin) = root.schema.exclusiveMinimum
     exclMin should be(6)
   }
+
+  it should "parse maxLength" in {
+    val input = ujson.Obj(
+      "maxLength" -> 0
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(len) = root.schema.maxLength
+    len should be(0)
+  }
+
+  it should "fail if maxLength is < 0" in {
+    val input = ujson.Obj(
+      "maxLength" -> -1
+    )
+    val Left(err) = JsonSchemaParser.parse(input)
+    err.getMessage should be("maxLength must be >= 0")
+  }
 }
