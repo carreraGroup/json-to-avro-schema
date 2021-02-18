@@ -274,4 +274,22 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val minItems = root.schema.minItems
     minItems should be(22)
   }
+
+  it should "parse uniqueItems" in {
+    val input = ujson.Obj("uniqueItems" -> true)
+    val Right(root) = JsonSchemaParser.parse(input)
+    root.schema.uniqueItems should be(true)
+  }
+
+  it should "uniqueItems defaults to false" in {
+    val input = ujson.Obj("$id" -> "#foo")
+    val Right(root) = JsonSchemaParser.parse(input)
+    root.schema.uniqueItems should be(false)
+  }
+
+  it should "fail if uniqueItems value is not a bool" in {
+    val input = ujson.Obj("uniqueItems" -> ujson.Str("boom"))
+    val Left(err) = JsonSchemaParser.parse(input)
+    err.getMessage should be("uniqueItems must be a boolean")
+  }
 }

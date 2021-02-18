@@ -19,6 +19,7 @@ case class JsonSchema(
                        items: Seq[JsonSchema],
                        maxItems: Option[Int],
                        minItems: Int,
+                       uniqueItems: Boolean
                      )
 
 object JsonSchemaParser {
@@ -54,6 +55,7 @@ object JsonSchemaParser {
       items <- parseItems(obj)
       maxItems <- parsePositiveInteger(obj, "maxItems")
       minItems <- parsePositiveIntegerWithDefaultZero(obj, "minItems")
+      uniqueItems <- parseUniqueItems(obj)
     } yield
       JsonSchema(
         id,
@@ -70,7 +72,8 @@ object JsonSchemaParser {
         pattern,
         items,
         maxItems,
-        minItems
+        minItems,
+        uniqueItems,
       )
 
   private def parseItems(value: ujson.Obj) = {
@@ -106,6 +109,14 @@ object JsonSchemaParser {
         case None => Right(None)
       }
     } yield result
+
+  private def parseUniqueItems(obj: ujson.Obj) =
+    for {
+      maybeBool <- parseBool(obj, "uniqueItems")
+    } yield maybeBool match {
+      case Some(b) => b
+      case None => false
+    }
 
   private def parsePattern(obj: ujson.Obj) = {
     //TODO: verify value is a ECMA 262 regex
@@ -157,6 +168,15 @@ object JsonSchemaParser {
       } yield Some(num)
     }
     runOptParser(obj, elemName, parser)
+  }
+
+  private def parseBool(value: ujson.Obj, elemName: String) = {
+    val parser = (node: ujson.Value) => {
+      for {
+        result <- node.boolOpt.toRight(ParserError(s"$elemName must be a boolean"))
+      } yield Some(result)
+    }
+    runOptParser(value, elemName, parser)
   }
 
   private def parseString(value: ujson.Obj, elemName: String): Either[ParserError, Option[String]] = {
