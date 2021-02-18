@@ -61,4 +61,21 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Some(id) = root.schema.ref
     id should be(Uri.parse("#foo"))
   }
+
+  it should "parse title" in {
+    val input = ujson.Obj(
+      "title" -> "My awesome schema"
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(title) = root.schema.title
+    title should be("My awesome schema")
+  }
+
+  it should "fail if title is not a string" in {
+    val input = ujson.Obj(
+      "title" -> 32
+    )
+    val Left(err) = JsonSchemaParser.parse(input)
+    err.getMessage should be("title must be a String")
+  }
 }

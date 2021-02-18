@@ -6,6 +6,7 @@ case class RootJsonSchema(schemaUri: Option[Uri], schema: JsonSchema)
 case class JsonSchema(
                        id: Option[Uri],
                        ref: Option[Uri],
+                       title: Option[String]
                      )
 
 object JsonSchemaParser {
@@ -28,7 +29,8 @@ object JsonSchemaParser {
     for {
       id <- parseId(obj)
       ref <- parseRef(obj)
-    } yield JsonSchema(id, ref)
+      title <- parseString(obj, "title")
+    } yield JsonSchema(id, ref, title)
 
   def parseRef(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
     parseUri(obj, "$ref")
@@ -54,6 +56,16 @@ object JsonSchemaParser {
     } else
       Right(None)
   }
+
+  private def parseString(value: ujson.Obj, elemName: String): Either[ParserError, Option[String]] =
+    if (value.obj.keys.exists(k => k == elemName)) {
+      val node = value(elemName)
+      for {
+        result <- node.strOpt.toRight(ParserError(s"$elemName must be a String"))
+      } yield Some(result)
+    }
+    else
+      Right(None)
 }
 
 final case class ParserError(message: String = "", cause: Throwable = None.orNull)
