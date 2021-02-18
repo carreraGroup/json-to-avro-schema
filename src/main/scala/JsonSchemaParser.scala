@@ -16,7 +16,9 @@ case class JsonSchema(
                        maxLength: Option[Int],
                        minLength: Int,
                        pattern: Option[String],
-                       items: Seq[JsonSchema]
+                       items: Seq[JsonSchema],
+                       maxItems: Option[Int],
+                       minItems: Int,
                      )
 
 object JsonSchemaParser {
@@ -35,7 +37,7 @@ object JsonSchemaParser {
    * so this is our recursive descent function
    * that ignores it.
    * */
-  def parseSubSchema(obj: ujson.Obj): Either[ParserError, JsonSchema] =
+  private def parseSubSchema(obj: ujson.Obj): Either[ParserError, JsonSchema] =
     for {
       id <- parseUri(obj, "$id")
       ref <- parseUri(obj, "$ref")
@@ -47,9 +49,11 @@ object JsonSchemaParser {
       min <- parseNumber(obj, "minimum")
       exclMin <- parseNumber(obj, "exclusiveMinimum")
       maxLen <- parsePositiveInteger(obj, "maxLength")
-      minLen <- parseMinLength(obj)
+      minLen <- parsePositiveIntegerWithDefaultZero(obj, "minLength")
       pattern <- parsePattern(obj)
       items <- parseItems(obj)
+      maxItems <- parsePositiveInteger(obj, "maxItems")
+      minItems <- parsePositiveIntegerWithDefaultZero(obj, "minItems")
     } yield
       JsonSchema(
         id,
@@ -65,6 +69,8 @@ object JsonSchemaParser {
         minLen,
         pattern,
         items,
+        maxItems,
+        minItems
       )
 
   private def parseItems(value: ujson.Obj) = {
@@ -101,16 +107,19 @@ object JsonSchemaParser {
       }
     } yield result
 
-  private def parseMinLength(obj: ujson.Obj) =
-    for {
-      num <- parsePositiveInteger(obj, "minLength")
-      result = num.getOrElse(0)
-    } yield result
-
   private def parsePattern(obj: ujson.Obj) = {
     //TODO: verify value is a ECMA 262 regex
     parseString(obj, "pattern")
   }
+
+  private def parsePositiveIntegerWithDefault(default: Int)(obj: ujson.Obj, elemName: String) =
+    for {
+      num <- parsePositiveInteger(obj, elemName)
+      result = num.getOrElse(default)
+    } yield result
+
+  private def parsePositiveIntegerWithDefaultZero =
+    parsePositiveIntegerWithDefault(0)_
 
   private def parsePositiveInteger(obj: ujson.Obj, elemName: String) =
     for {

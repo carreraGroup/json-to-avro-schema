@@ -260,4 +260,18 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Left(err) = JsonSchemaParser.parse(input)
     err.getMessage should be("items array contents must be objects")
   }
+
+  it should "parse maxItems" in {
+    val input = ujson.Obj("maxItems" -> 32)
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(maxItems) = root.schema.maxItems
+    maxItems should be(32)
+  }
+
+  it should "parse minItems" in {
+    val input = ujson.Obj("minItems" -> 22)
+    val Right(root) = JsonSchemaParser.parse(input)
+    val minItems = root.schema.minItems
+    minItems should be(22)
+  }
 }
