@@ -42,4 +42,10 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Some(id) = root.schema.id
     id should be(Uri.parse("urn:uuid:ee564b8a-7a87-4125-8c96-e9f123d6766f"))
   }
+
+  it should "fail if root is not an Object" in {
+    val input = ujson.Arr(1,2,3)
+    val Left(err) = JsonSchemaParser.parse(input)
+    err.getMessage should be("schema must be an object")
+  }
 }
