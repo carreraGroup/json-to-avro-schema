@@ -13,7 +13,8 @@ case class JsonSchema(
                        exclusiveMaximum: Option[Double],
                        minimum: Option[Double],
                        exclusiveMinimum: Option[Double],
-                       maxLength: Option[Int]
+                       maxLength: Option[Int],
+                       minLength: Int
                      )
 
 object JsonSchemaParser {
@@ -44,6 +45,7 @@ object JsonSchemaParser {
       min <- parseNumber(obj, "minimum")
       exclMin <- parseNumber(obj, "exclusiveMinimum")
       maxLen <- parsePositiveInteger(obj, "maxLength")
+      minLen <- parseMinLength(obj)
     } yield
       JsonSchema(
         id,
@@ -55,7 +57,8 @@ object JsonSchemaParser {
         exclMax,
         min,
         exclMin,
-        maxLen
+        maxLen,
+        minLen,
       )
 
   private def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
@@ -71,6 +74,12 @@ object JsonSchemaParser {
         case Some(v) => if (v <= 0) Left(ParserError("multipleOf must be > 0")) else Right(num)
         case None => Right(None)
       }
+    } yield result
+
+  private def parseMinLength(obj: ujson.Obj) =
+    for {
+      num <- parsePositiveInteger(obj, "minLength")
+      result = num.getOrElse(0)
     } yield result
 
   private def parsePositiveInteger(obj: ujson.Obj, elemName: String) =
