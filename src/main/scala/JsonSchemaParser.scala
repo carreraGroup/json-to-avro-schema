@@ -49,7 +49,7 @@ object JsonSchemaParser {
         uri <- Uri.parseOption(uriStr).toRight(ParserError(s"Invalid $elemName URI"))
       } yield Some(uri)
     }
-    parseValue(value, elemName, parser)
+    runParser(value, elemName, parser)
   }
 
   private def parseNumber(obj: ujson.Obj, elemName: String): Either[ParserError, Option[Double]] = {
@@ -58,7 +58,7 @@ object JsonSchemaParser {
         num <- node.numOpt.toRight(ParserError(s"$elemName must be a number"))
       } yield Some(num)
     }
-    parseValue(obj, elemName, parser)
+    runParser(obj, elemName, parser)
   }
 
   private def parseString(value: ujson.Obj, elemName: String): Either[ParserError, Option[String]] = {
@@ -67,11 +67,11 @@ object JsonSchemaParser {
         result <- node.strOpt.toRight(ParserError(s"$elemName must be a String"))
       } yield Some(result)
     }
-    parseValue(value, elemName, parser)
+    runParser(value, elemName, parser)
   }
 
   /** Checks for the existence of an element before running the parser */
-  private def parseValue[T](value: ujson.Obj, elemName: String, parser: ujson.Value => Either[ParserError, Option[T]]): Either[ParserError, Option[T]] =
+  private def runParser[T](value: ujson.Obj, elemName: String, parser: ujson.Value => Either[ParserError, Option[T]]): Either[ParserError, Option[T]] =
     if (value.obj.keys.exists(k => k == elemName)) {
       val node = value(elemName)
       parser(node)
