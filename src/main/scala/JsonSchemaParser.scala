@@ -7,7 +7,8 @@ case class JsonSchema(
                        id: Option[Uri],
                        ref: Option[Uri],
                        title: Option[String],
-                       desc: Option[String]
+                       desc: Option[String],
+                       multipleOf: Option[Double]
                      )
 
 object JsonSchemaParser {
@@ -32,7 +33,8 @@ object JsonSchemaParser {
       ref <- parseUri(obj, "$ref")
       title <- parseString(obj, "title")
       desc <- parseString(obj, "description")
-    } yield JsonSchema(id, ref, title, desc)
+      multipleOf <- parseNumber(obj, "multipleOf")
+    } yield JsonSchema(id, ref, title, desc, multipleOf)
 
   def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
     //TODO: The spec says the schema uri must include a scheme. Validate it does.
@@ -48,6 +50,15 @@ object JsonSchemaParser {
       } yield Some(uri)
     }
     parseValue(value, elemName, parser)
+  }
+
+  private def parseNumber(obj: ujson.Obj, elemName: String): Either[ParserError, Option[Double]] = {
+    val parser = (node: ujson.Value) => {
+      for {
+        num <- node.numOpt.toRight(ParserError(s"$elemName must be a number"))
+      } yield Some(num)
+    }
+    parseValue(obj, elemName, parser)
   }
 
   private def parseString(value: ujson.Obj, elemName: String): Either[ParserError, Option[String]] = {

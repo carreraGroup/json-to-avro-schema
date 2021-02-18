@@ -107,4 +107,14 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
      * https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-7.4
      */
   }
+
+  it should "parse multipleOf" in {
+    val input = ujson.Obj(
+      "multipleOf" -> 2
+    )
+
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(multipleOf) = root.schema.multipleOf
+    multipleOf should be(2)
+  }
 }
