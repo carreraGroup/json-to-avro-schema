@@ -27,18 +27,10 @@ object JsonSchemaParser {
    * */
   def parseSubSchema(obj: ujson.Obj): Either[ParserError, JsonSchema] =
     for {
-      id <- parseId(obj)
-      ref <- parseRef(obj)
+      id <- parseUri(obj, "$id")
+      ref <- parseUri(obj, "$ref")
       title <- parseString(obj, "title")
     } yield JsonSchema(id, ref, title)
-
-  def parseRef(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
-    parseUri(obj, "$ref")
-  }
-
-  def parseId(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
-    parseUri(obj, "$id")
-  }
 
   def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
     //TODO: The spec says the schema uri must include a scheme. Validate it does.
