@@ -126,4 +126,24 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Left(err) = JsonSchemaParser.parse(input)
     err.getMessage should be("multipleOf must be > 0")
   }
+
+  it should "parse maximum" in {
+    val input = ujson.Obj(
+      "maximum" -> 3
+    )
+
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(max) = root.schema.maximum
+    max should be(3)
+  }
+
+  it should "parse exclusiveMaximum" in {
+    val input = ujson.Obj(
+      "exclusiveMaximum" -> 4
+    )
+
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(max) = root.schema.exclusiveMaximum
+    max should be(4)
+  }
 }
