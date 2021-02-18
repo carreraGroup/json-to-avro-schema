@@ -76,12 +76,7 @@ object JsonSchemaParser {
         }
       } yield Seq(items)
     }
-    if (value.obj.keys.exists(k => k == elemName)) {
-      val node = value(elemName)
-      parser(node)
-    }
-    else
-      Right(Seq())
+    runSeqParser(value, "items", parser)
   }
 
   private def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
@@ -136,7 +131,7 @@ object JsonSchemaParser {
         uri <- Uri.parseOption(uriStr).toRight(ParserError(s"Invalid $elemName URI"))
       } yield Some(uri)
     }
-    runParser(value, elemName, parser)
+    runOptParser(value, elemName, parser)
   }
 
   private def parseNumber(obj: ujson.Obj, elemName: String): Either[ParserError, Option[Double]] = {
@@ -145,7 +140,7 @@ object JsonSchemaParser {
         num <- node.numOpt.toRight(ParserError(s"$elemName must be a number"))
       } yield Some(num)
     }
-    runParser(obj, elemName, parser)
+    runOptParser(obj, elemName, parser)
   }
 
   private def parseString(value: ujson.Obj, elemName: String): Either[ParserError, Option[String]] = {
@@ -154,17 +149,28 @@ object JsonSchemaParser {
         result <- node.strOpt.toRight(ParserError(s"$elemName must be a String"))
       } yield Some(result)
     }
-    runParser(value, elemName, parser)
+    runOptParser(value, elemName, parser)
   }
 
+  //TODO: Figure out how to make a function that's generic over several monads
   /** Checks for the existence of an element before running the parser */
-  private def runParser[T](value: ujson.Obj, elemName: String, parser: ujson.Value => Either[ParserError, Option[T]]): Either[ParserError, Option[T]] =
+  private def runOptParser[T](value: ujson.Obj, elemName: String, parser: ujson.Value => Either[ParserError, Option[T]]): Either[ParserError, Option[T]] =
     if (value.obj.keys.exists(k => k == elemName)) {
       val node = value(elemName)
       parser(node)
     }
     else
       Right(None)
+
+  /** Checks for the existence of an element before running the parser */
+  private def runSeqParser[T](value: ujson.Obj, elemName: String, parser: ujson.Value => Either[ParserError, Seq[T]]) = {
+    if (value.obj.keys.exists(k => k == elemName)) {
+      val node = value(elemName)
+      parser(node)
+    }
+    else
+      Right(Seq())
+  }
 }
 
 final case class ParserError(message: String = "", cause: Throwable = None.orNull)
