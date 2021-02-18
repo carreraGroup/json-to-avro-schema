@@ -87,4 +87,24 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Some(desc) = root.schema.desc
     desc should be("this is a pretty useless schema")
   }
+
+  ignore should "parse default" in {
+    /*
+     * This can be any JSON value.
+     * https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-7.3
+     *
+     * I have no idea how we'll translate this to an AVRO default.
+     * Thankfully, the fhir schema does not use JSON Schema defaults.
+     */
+  }
+
+  ignore should "parse examples" in {
+    /*
+     * AVRO doesn't have any equivalent
+     * and the values inside the array suffer the same problem as default.
+     * They can be any JSON value.
+     *
+     * https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-7.4
+     */
+  }
 }
