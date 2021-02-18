@@ -10,7 +10,9 @@ case class JsonSchema(
                        desc: Option[String],
                        multipleOf: Option[Double],
                        maximum: Option[Double],
-                       exclusiveMaximum: Option[Double]
+                       exclusiveMaximum: Option[Double],
+                       minimum: Option[Double],
+                       exclusiveMinimum: Option[Double],
                      )
 
 object JsonSchemaParser {
@@ -38,7 +40,20 @@ object JsonSchemaParser {
       multipleOf <- parseMultipleOf(obj)
       max <- parseNumber(obj, "maximum")
       exclMax <- parseNumber(obj, "exclusiveMaximum")
-    } yield JsonSchema(id, ref, title, desc, multipleOf, max, exclMax)
+      min <- parseNumber(obj, "minimum")
+      exclMin <- parseNumber(obj, "exclusiveMinimum")
+    } yield
+      JsonSchema(
+        id,
+        ref,
+        title,
+        desc,
+        multipleOf,
+        max,
+        exclMax,
+        min,
+        exclMin,
+      )
 
   def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
     //TODO: The spec says the schema uri must include a scheme. Validate it does.

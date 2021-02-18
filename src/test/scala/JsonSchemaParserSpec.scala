@@ -146,4 +146,22 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Some(max) = root.schema.exclusiveMaximum
     max should be(4)
   }
+
+  it should "parse minimum" in {
+    val input = ujson.Obj(
+      "minimum" -> 5
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(min) = root.schema.minimum
+    min should be(5)
+  }
+
+  it should "parse exclusiveMinimum" in {
+    val input = ujson.Obj(
+      "exclusiveMinimum" -> 6
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(exclMin) = root.schema.exclusiveMinimum
+    exclMin should be(6)
+  }
 }
