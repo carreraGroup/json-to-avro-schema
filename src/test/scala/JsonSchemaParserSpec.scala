@@ -38,6 +38,7 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val input = ujson.Obj(
       "$id" -> "urn:uuid:ee564b8a-7a87-4125-8c96-e9f123d6766f"
     )
+
     val Right(root) = JsonSchemaParser.parse(input)
     val Some(id) = root.schema.id
     id should be(Uri.parse("urn:uuid:ee564b8a-7a87-4125-8c96-e9f123d6766f"))

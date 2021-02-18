@@ -1,8 +1,5 @@
 package io.carrera.jsontoavroschema
 import io.lemonlabs.uri.Uri
-import ujson.Value
-
-import scala.util.Try
 
 case class RootJsonSchema(schemaUri: Option[Uri], schema: JsonSchema)
 
@@ -39,16 +36,15 @@ object JsonSchemaParser {
     parseUri(obj, "$schema")
   }
 
-  private def parseUri(obj: ujson.Obj, elemName: String): Either[ParserError, Option[Uri]] = {
-    Try(obj(elemName)).toOption match {
-      case Some(node) => {
-        for {
-          uriStr <- node.strOpt.toRight(ParserError(s"$elemName must be a URI string"))
-          uri <- Uri.parseOption(uriStr).toRight(ParserError(s"Invalid $elemName URI"))
-        } yield Some(uri)
-      }
-      case None => Right(None)
-    }
+  private def parseUri(value: ujson.Obj, elemName: String): Either[ParserError, Option[Uri]] = {
+    if (value.obj.keys.exists(k => k == elemName)) {
+      val node = value(elemName)
+      for {
+        uriStr <- node.strOpt.toRight(ParserError(s"$elemName must be a URI string"))
+        uri <- Uri.parseOption(uriStr).toRight(ParserError(s"Invalid $elemName URI"))
+      } yield Some(uri)
+    } else
+      Right(None)
   }
 }
 
