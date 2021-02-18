@@ -225,8 +225,19 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     innerId should be(Uri.parse("#foo"))
   }
 
-  ignore should "parse array of items" in {
-
+  it should "parse array of items" in {
+    val input = ujson.Obj(
+      "items" -> ujson.Arr(
+        ujson.Obj("$id" -> "#foo"),
+        ujson.Obj("$id" -> "#bar")
+      )
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    val head::tail = root.schema.items
+    val Some(fooId) = head.id
+    fooId should be(Uri.parse("#foo"))
+    val Some(barId) = tail.head.id
+    barId should be(Uri.parse("#bar"))
   }
 
   it should "default items to empty list" in {
@@ -234,5 +245,19 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(root) = JsonSchemaParser.parse(input)
     val items = root.schema.items
     items should be(Seq())
+  }
+
+  it should "fail if items is anything but object or array" in {
+    val input = ujson.Obj("items" -> ujson.Bool(true))
+    val Left(err) = JsonSchemaParser.parse(input)
+    err.getMessage should be("items must be an object or array")
+  }
+
+  it should "fail if items contains something that isn't an object" in {
+    val input = ujson.Obj(
+      "items" -> ujson.Arr(ujson.Bool(true))
+    )
+    val Left(err) = JsonSchemaParser.parse(input)
+    err.getMessage should be("items array contents must be objects")
   }
 }

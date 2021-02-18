@@ -68,13 +68,20 @@ object JsonSchemaParser {
       )
 
   private def parseItems(value: ujson.Obj) = {
-    val elemName = "items"
     val parser = (node: ujson.Value) => {
       for {
         items <- node match {
-          case n: ujson.Obj => parseSubSchema(n)
+          case n: ujson.Obj => parseSubSchema(n).flatMap(schema => Right(Seq(schema)))
+          case ujson.Arr(a) => a.foldLeft(Right(Seq[JsonSchema]()).withLeft[ParserError]) { case (acc, cur) =>
+            for {
+              last <- acc
+              obj <- cur.objOpt.toRight(ParserError("items array contents must be objects"))
+              schema <- parseSubSchema(obj)
+            } yield last :+ schema
+          }
+          case _ => Left(ParserError("items must be an object or array"))
         }
-      } yield Seq(items)
+      } yield items
     }
     runSeqParser(value, "items", parser)
   }
