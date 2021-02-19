@@ -1,4 +1,5 @@
 package io.carrera.jsontoavroschema
+
 import io.lemonlabs.uri.Uri
 
 case class RootJsonSchema(schemaUri: Option[Uri], schema: JsonSchema)
@@ -20,7 +21,8 @@ case class JsonSchema(
                        maxItems: Option[Int],
                        minItems: Int,
                        uniqueItems: Boolean,
-                       required: Seq[String]
+                       required: Seq[String],
+                       properties: Map[String, JsonSchema]
                      )
 
 object JsonSchemaParser {
@@ -39,7 +41,7 @@ object JsonSchemaParser {
    * so this is our recursive descent function
    * that ignores it.
    * */
-  private def parseSubSchema(obj: ujson.Obj): Either[ParserError, JsonSchema] =
+  def parseSubSchema(obj: ujson.Obj): Either[ParserError, JsonSchema] =
     for {
       id <- parseUri(obj, "$id")
       ref <- parseUri(obj, "$ref")
@@ -58,6 +60,7 @@ object JsonSchemaParser {
       minItems <- parsePositiveIntegerWithDefaultZero(obj, "minItems")
       uniqueItems <- parseUniqueItems(obj)
       required <- parseRequired(obj)
+      properties <- parseProperties(obj)
     } yield
       JsonSchema(
         id,
@@ -77,6 +80,7 @@ object JsonSchemaParser {
         minItems,
         uniqueItems,
         required,
+        properties,
       )
 
   private def parseItems(value: ujson.Obj) = {
@@ -98,7 +102,7 @@ object JsonSchemaParser {
     runSeqParser(value, "items", parser)
   }
 
-  private def parseRequired(value: ujson.Obj) = {
+  private def parseRequired(value: ujson.Obj)= {
     val parser = (node: ujson.Value) => {
       for {
         required <-
@@ -115,6 +119,22 @@ object JsonSchemaParser {
       } yield props
     }
     runSeqParser(value, "required", parser)
+  }
+
+  private def parseProperties(obj: ujson.Obj): Either[ParserError, Map[String,JsonSchema]]  = {
+    val parser = (node: ujson.Value) => {
+      for {
+        rawProps <- node.objOpt.toRight(ParserError("properties must be an object"))
+        props <- rawProps.foldLeft(Right(Map[String,JsonSchema]()).withLeft[ParserError]) { case (acc, (k, v)) =>
+          for {
+            last <- acc
+            obj <- v.objOpt.toRight(ParserError("properties values must be objects"))
+            schema <- parseSubSchema(obj)
+          } yield last + (k -> schema)
+        }
+      } yield props
+    }
+    runMapParser(obj, "properties", parser)
   }
 
   private def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
@@ -152,7 +172,7 @@ object JsonSchemaParser {
     } yield result
 
   private def parsePositiveIntegerWithDefaultZero =
-    parsePositiveIntegerWithDefault(0)_
+    parsePositiveIntegerWithDefault(0) _
 
   private def parsePositiveInteger(obj: ujson.Obj, elemName: String) =
     for {
@@ -210,9 +230,9 @@ object JsonSchemaParser {
     runOptParser(value, elemName, parser)
   }
 
-  //TODO: Figure out how to make a function that's generic over several monads
+  //TODO: Figure out how to make a function that's generic over several containers
   /** Checks for the existence of an element before running the parser */
-  private def runOptParser[T](value: ujson.Obj, elemName: String, parser: ujson.Value => Either[ParserError, Option[T]]): Either[ParserError, Option[T]] =
+  private def runOptParser[T](value: ujson.Obj, elemName: String, parser: ujson.Value => Either[ParserError, Option[T]]) =
     if (value.obj.keys.exists(k => k == elemName)) {
       val node = value(elemName)
       parser(node)
@@ -221,14 +241,21 @@ object JsonSchemaParser {
       Right(None)
 
   /** Checks for the existence of an element before running the parser */
-  private def runSeqParser[T](value: ujson.Obj, elemName: String, parser: ujson.Value => Either[ParserError, Seq[T]]) = {
+  private def runSeqParser[T](value: ujson.Obj, elemName: String, parser: ujson.Value => Either[ParserError, Seq[T]]) =
+    if (value.obj.keys.exists(k => k == elemName)) {
+    val node = value(elemName)
+    parser(node)
+  }
+  else
+    Right(Seq())
+
+  private def runMapParser[T](value: ujson.Obj, elemName: String, parser: ujson.Value => Either[ParserError, Map[String,T]]): Either[ParserError, Map[String,T]] =
     if (value.obj.keys.exists(k => k == elemName)) {
       val node = value(elemName)
       parser(node)
     }
     else
-      Right(Seq())
-  }
+      Right(Map())
 }
 
 final case class ParserError(message: String = "", cause: Throwable = None.orNull)

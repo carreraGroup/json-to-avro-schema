@@ -321,4 +321,27 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     err.getMessage should be("required array contents must be strings")
   }
 
+  it should "parse properties" in {
+    val fooProp = ujson.Obj("$id" -> "#foo")
+    val barProp = ujson.Obj("$id" -> "#bar")
+    val input = ujson.Obj(
+      "properties" -> ujson.Obj(
+        "foo" -> fooProp,
+        "bar" -> barProp
+      )
+    )
+
+    val Right(expectedFoo) = JsonSchemaParser.parseSubSchema(fooProp)
+    val Right(expectedBar) = JsonSchemaParser.parseSubSchema(barProp)
+
+    val Right(root) = JsonSchemaParser.parse(input)
+    val props = root.schema.properties
+    props should be(Map("foo" -> expectedFoo, "bar" -> expectedBar))
+  }
+
+  it should "default properties to empty map" in {
+    val input = ujson.Obj("$id" -> "#foo")
+    val Right(root) = JsonSchemaParser.parse(input)
+    root.schema.properties should be(Map())
+  }
 }
