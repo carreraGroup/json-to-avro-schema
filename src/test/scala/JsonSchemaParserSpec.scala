@@ -76,7 +76,7 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "title" -> 32
     )
     val Left(err) = JsonSchemaParser.parse(input)
-    err.getMessage should be("title must be a String")
+    err.getMessage should be("title must be a string")
   }
 
   it should "parse description" in {
@@ -314,7 +314,7 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "required" -> ujson.Arr(ujson.Bool(true))
     )
     val Left(err) = JsonSchemaParser.parse(input)
-    err.getMessage should be("required array contents must be strings")
+    err.getMessage should be("required value must be a string")
   }
 
   it should "parse properties" in {

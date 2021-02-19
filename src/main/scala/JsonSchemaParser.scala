@@ -58,7 +58,7 @@ object JsonSchemaParser {
       desc <- parseStringOpt(obj, "description")
       definitions <- parseSchemaMap(obj, "definitions")
       default <- parseAnyOpt(obj, "default")
-      multipleOf <- parseNumberGreaterThanZeroOpt(obj, "multipleOf")
+      multipleOf <- parseNonNegativeNumberOpt(obj, "multipleOf")
       max <- parseNumberOpt(obj, "maximum")
       exclMax <- parseNumberOpt(obj, "exclusiveMaximum")
       min <- parseNumberOpt(obj, "minimum")
@@ -134,7 +134,7 @@ object JsonSchemaParser {
         props <- required.foldLeft(Right(Seq[String]()).withLeft[ParserError]) { case (acc, cur) =>
           for {
             last <- acc
-            prop <- cur.strOpt.toRight(ParserError("required array contents must be strings"))
+            prop <- parseString(cur, "required value")
           } yield last :+ prop
         }
       } yield props
@@ -150,7 +150,7 @@ object JsonSchemaParser {
           case ujson.Arr(a) => a.foldLeft(Right(Seq[String]()).withLeft[ParserError]) { case (acc, cur) =>
             for {
               last <- acc
-              t <- cur.strOpt.toRight(ParserError("type value must be a string"))
+              t <- parseString(cur, "type value")
             } yield last :+ t
           }
           case _ => Left(ParserError("type must be a string or array"))
@@ -224,17 +224,15 @@ object JsonSchemaParser {
   private def parseSchemaOpt(obj: ujson.Obj, elemName: String) =
     runOptParser(obj, elemName, optParser(parseSchema)(elemName))
 
-  private def parseSchema(value: ujson.Value, errMsg: String) = {
+  private def parseSchema(value: ujson.Value, errMsg: String) =
     for {
       obj <- value.objOpt.toRight(ParserError(errMsg))
       schema <- parseSubSchema(obj)
     } yield schema
-  }
 
-  private def parsePatternOpt(obj: ujson.Obj) = {
+  private def parsePatternOpt(obj: ujson.Obj) =
     //TODO: verify value is a ECMA 262 regex
     parseStringOpt(obj, "pattern")
-  }
 
   private def parsePositiveIntegerWithDefault(default: Int)(obj: ujson.Obj, elemName: String) =
     for {
@@ -245,31 +243,11 @@ object JsonSchemaParser {
   private def parsePositiveIntegerWithDefaultZero =
     parsePositiveIntegerWithDefault(0) _
 
-  //TODO: use optParser
   private def parsePositiveIntegerOpt(obj: ujson.Obj, elemName: String) =
-    for {
-      num <- parseIntegerOpt(obj, elemName)
-      result <- num match {
-        case Some(n) =>
-          if (n < 0)
-            Left(ParserError(s"$elemName must be >= 0"))
-          else
-            Right(Some(n))
-        case None => Right(None)
-      }
-    } yield result
+    runOptParser(obj, elemName, optParser(parsePositiveInteger)(elemName))
 
-  private def parseIntegerOpt(obj: ujson.Obj, elemName: String) =
-    runOptParser(obj, elemName, optParser(parseInteger)(elemName))
-
-  private def parseNumberGreaterThanZeroOpt(obj: ujson.Obj, elemName: String) =
-    for {
-      num <- parseNumberOpt(obj, elemName)
-      result <- num match {
-        case Some(v) => if (v <= 0) Left(ParserError(s"$elemName must be > 0")) else Right(num)
-        case None => Right(None)
-      }
-    } yield result
+  private def parseNonNegativeNumberOpt(obj: ujson.Obj, elemName: String) =
+    runOptParser(obj, elemName, optParser(parseNonNegativeNumber)(elemName))
 
   private def parseNumberOpt(obj: ujson.Obj, elemName: String) =
     runOptParser(obj, elemName, optParser(parseNumber)(elemName))
@@ -286,10 +264,30 @@ object JsonSchemaParser {
   private def parseAnyOpt(value: ujson.Obj, elemName: String) =
     runOptParser(value, elemName, optParser(parseIdentity)(elemName))
 
+  private def parsePositiveInteger(value: ujson.Value, elemName: String) =
+    for {
+      num <- parseInteger(value, elemName)
+      result <-
+        if (num < 0)
+          Left(ParserError(s"$elemName must be >= 0"))
+        else
+          Right(num)
+    } yield result
+
   private def parseInteger(value: ujson.Value, elemName: String) =
     for {
       num <- parseNumber(value, elemName)
     } yield num.toInt
+
+  private def parseNonNegativeNumber(value: ujson.Value, elemName: String) =
+    for {
+      num <- parseNumber(value, elemName)
+      result <-
+        if (num <= 0)
+          Left(ParserError(s"$elemName must be > 0"))
+        else
+          Right(num)
+    } yield result
 
   private def parseNumber(value: ujson.Value, elemName: String) =
     for {
@@ -309,7 +307,7 @@ object JsonSchemaParser {
 
   private def parseString(value: ujson.Value, elemName: String) =
     for {
-      result <- value.strOpt.toRight(ParserError(s"$elemName must be a String"))
+      result <- value.strOpt.toRight(ParserError(s"$elemName must be a string"))
     } yield result
 
   private def parseIdentity(value: ujson.Value, elemName: String) =
