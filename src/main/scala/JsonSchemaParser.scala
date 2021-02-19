@@ -25,6 +25,7 @@ case class JsonSchema(
                        required: Seq[String],
                        properties: Map[String, JsonSchema],
                        const: Option[ujson.Value],
+                       types: Seq[String],
                      )
 
 object JsonSchemaParser {
@@ -65,6 +66,7 @@ object JsonSchemaParser {
       required <- parseRequired(obj)
       properties <- parseProperties(obj)
       const <- parseAny(obj, "const")
+      types <- parseTypes(obj)
     } yield
       JsonSchema(
         id,
@@ -87,6 +89,7 @@ object JsonSchemaParser {
         required,
         properties,
         const,
+        types,
       )
 
   private def parseItems(value: ujson.Obj) = {
@@ -141,6 +144,24 @@ object JsonSchemaParser {
       } yield props
     }
     runMapParser(obj, "properties", parser)
+  }
+
+  private def parseTypes(obj: ujson.Obj) = {
+    val parser = (node: ujson.Value) => {
+      for {
+        types <- node match {
+          case ujson.Str(s) => Right(Seq(s))
+          case ujson.Arr(a) => a.foldLeft(Right(Seq[String]()).withLeft[ParserError]) { case (acc, cur) =>
+            for {
+              last <- acc
+              t <- cur.strOpt.toRight(ParserError("type value must be a string"))
+            } yield last :+ t
+          }
+          case _ => Left(ParserError("type must be a string or array"))
+        }
+      } yield types
+    }
+    runSeqParser(obj, "type", parser)
   }
 
   private def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {

@@ -349,4 +349,18 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Some(const) = root.schema.const
     const should be(ujson.Str("hi"))
   }
+
+  it should "parse string type" in {
+    val input = ujson.Obj("type" -> ujson.Str("string"))
+    val Right(root) = JsonSchemaParser.parse(input)
+    root.schema.types should be(Seq("string"))
+  }
+
+  it should "parse array type" in {
+    val input = ujson.Obj(
+      "type" -> ujson.Arr("string", "bool")
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    root.schema.types should be(Seq("string", "bool"))
+  }
 }
