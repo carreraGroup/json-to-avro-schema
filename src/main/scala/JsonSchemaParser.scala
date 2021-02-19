@@ -26,6 +26,7 @@ case class JsonSchema(
                        properties: Map[String, JsonSchema],
                        const: Option[ujson.Value],
                        types: Seq[String],
+                       enum: Seq[ujson.Value],
                      )
 
 object JsonSchemaParser {
@@ -67,6 +68,7 @@ object JsonSchemaParser {
       properties <- parseProperties(obj)
       const <- parseAny(obj, "const")
       types <- parseTypes(obj)
+      enum <- parseEnum(obj)
     } yield
       JsonSchema(
         id,
@@ -90,6 +92,7 @@ object JsonSchemaParser {
         properties,
         const,
         types,
+        enum,
       )
 
   private def parseItems(value: ujson.Obj) = {
@@ -162,6 +165,19 @@ object JsonSchemaParser {
       } yield types
     }
     runSeqParser(obj, "type", parser)
+  }
+
+  private def parseEnum(obj: ujson.Obj) = {
+    val parser = (node: ujson.Value) => {
+      for {
+        enum <-
+          node
+            .arrOpt
+            .toRight(ParserError("enum must be an array"))
+            .map(_.toSeq)
+      } yield enum
+    }
+    runSeqParser(obj, "enum", parser)
   }
 
   private def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {

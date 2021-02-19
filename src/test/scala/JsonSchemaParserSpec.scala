@@ -363,4 +363,13 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(root) = JsonSchemaParser.parse(input)
     root.schema.types should be(Seq("string", "bool"))
   }
+
+  it should "parse enum" in {
+    // enum is a sum type (discriminated union)
+    val input = ujson.Obj(
+      "enum" -> ujson.Arr(ujson.Str("somevalue"), ujson.Bool(true))
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    root.schema.enum should be(Seq(ujson.Str("somevalue"), ujson.Bool(true)))
+  }
 }
