@@ -16,7 +16,9 @@ class ApplicationSpec extends AnyFlatSpec {
 
   it should "loadFile" in {
     val expected =
-      """{  "key": "value"}"""
+      """{
+        |  "key": "value"
+        |}""".stripMargin
     val Success(actual) = Application
       .loadFile("src/test/resources/basic.json")
 
