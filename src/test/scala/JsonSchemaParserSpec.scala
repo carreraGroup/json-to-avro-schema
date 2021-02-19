@@ -298,6 +298,24 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     err.getMessage should be("uniqueItems must be a boolean")
   }
 
+  it should "parse contains" in {
+    val fooSchema = ujson.Obj("$id" -> "#foo")
+    val input = ujson.Obj("contains" -> fooSchema)
+    val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
+
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(contains) = root.schema.contains
+    contains should be(foo)
+  }
+
+  it should "parse maxProperties" in {
+    val input = ujson.Obj("maxProperties" -> 0)
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(maxProps) = root.schema.maxProperties
+    maxProps should be(0)
+  }
+  it should "parse minProperties"
+
   it should "parse required" in {
     val input = ujson.Obj(
       "required" -> ujson.Arr("someProperty", "someOtherProp")
@@ -472,10 +490,6 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Some(not) = root.schema.not
     not should be(foo)
   }
-
-  it should "parse contains"
-  it should "parse maxProperties"
-  it should "parse minProperties"
 
   it should "parse dependencies"
   it should "parse propertyNames"

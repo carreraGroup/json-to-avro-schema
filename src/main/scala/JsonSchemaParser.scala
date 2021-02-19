@@ -24,6 +24,8 @@ case class JsonSchema(
                        maxItems: Option[Int],
                        minItems: Int,
                        uniqueItems: Boolean,
+                       contains: Option[JsonSchema],
+                       maxProperties: Option[Int],
                        required: Seq[String],
                        properties: Map[String, JsonSchema],
                        patternProperties: Map[String, JsonSchema],
@@ -62,19 +64,21 @@ object JsonSchemaParser {
       desc <- parseStringOpt(obj, "description")
       definitions <- parseSchemaMap(obj, "definitions")
       default <- parseAnyOpt(obj, "default")
-      multipleOf <- parseNonNegativeNumberOpt(obj, "multipleOf")
+      multipleOf <- parsePositiveNumberOpt(obj, "multipleOf")
       max <- parseNumberOpt(obj, "maximum")
       exclMax <- parseNumberOpt(obj, "exclusiveMaximum")
       min <- parseNumberOpt(obj, "minimum")
       exclMin <- parseNumberOpt(obj, "exclusiveMinimum")
-      maxLen <- parsePositiveIntegerOpt(obj, "maxLength")
-      minLen <- parsePositiveIntegerWithDefaultZero(obj, "minLength")
+      maxLen <- parseNonNegativeIntegerOpt(obj, "maxLength")
+      minLen <- parseNonNegativeIntegerWithDefaultZero(obj, "minLength")
       pattern <- parsePatternOpt(obj)
       items <- parseItems(obj)
       additionalItems <- parseSchemaOpt(obj, "additionalItems")
-      maxItems <- parsePositiveIntegerOpt(obj, "maxItems")
-      minItems <- parsePositiveIntegerWithDefaultZero(obj, "minItems")
+      maxItems <- parseNonNegativeIntegerOpt(obj, "maxItems")
+      minItems <- parseNonNegativeIntegerWithDefaultZero(obj, "minItems")
       uniqueItems <- parseUniqueItems(obj)
+      contains <- parseSchemaOpt(obj, "contains")
+      maxProps <- parseNonNegativeIntegerOpt(obj, "maxProperties")
       required <- parseRequired(obj)
       properties <- parseSchemaMap(obj, "properties")
       patternProps <- parsePatternProperties(obj)
@@ -108,6 +112,8 @@ object JsonSchemaParser {
         maxItems,
         minItems,
         uniqueItems,
+        contains,
+        maxProps,
         required,
         properties,
         patternProps,
@@ -250,20 +256,20 @@ object JsonSchemaParser {
     //TODO: verify value is a ECMA 262 regex
     parseStringOpt(obj, "pattern")
 
-  private def parsePositiveIntegerWithDefault(default: Int)(obj: ujson.Obj, elemName: String) =
+  private def parseNonNegativeIntegerWithDefault(default: Int)(obj: ujson.Obj, elemName: String) =
     for {
-      num <- parsePositiveIntegerOpt(obj, elemName)
+      num <- parseNonNegativeIntegerOpt(obj, elemName)
       result = num.getOrElse(default)
     } yield result
 
-  private def parsePositiveIntegerWithDefaultZero =
-    parsePositiveIntegerWithDefault(0) _
+  private def parseNonNegativeIntegerWithDefaultZero =
+    parseNonNegativeIntegerWithDefault(0) _
 
-  private def parsePositiveIntegerOpt(obj: ujson.Obj, elemName: String) =
-    runOptParser(obj, elemName, optParser(parsePositiveInteger)(elemName))
+  private def parseNonNegativeIntegerOpt(obj: ujson.Obj, elemName: String) =
+    runOptParser(obj, elemName, optParser(parseNonNegativeInteger)(elemName))
 
-  private def parseNonNegativeNumberOpt(obj: ujson.Obj, elemName: String) =
-    runOptParser(obj, elemName, optParser(parseNonNegativeNumber)(elemName))
+  private def parsePositiveNumberOpt(obj: ujson.Obj, elemName: String) =
+    runOptParser(obj, elemName, optParser(parsePositiveNumber)(elemName))
 
   private def parseNumberOpt(obj: ujson.Obj, elemName: String) =
     runOptParser(obj, elemName, optParser(parseNumber)(elemName))
@@ -280,7 +286,8 @@ object JsonSchemaParser {
   private def parseAnyOpt(value: ujson.Obj, elemName: String) =
     runOptParser(value, elemName, optParser(parseIdentity)(elemName))
 
-  private def parsePositiveInteger(value: ujson.Value, elemName: String) =
+  //TODO: DRY up number parsing with validation
+  private def parseNonNegativeInteger(value: ujson.Value, elemName: String) =
     for {
       num <- parseInteger(value, elemName)
       result <-
@@ -295,9 +302,9 @@ object JsonSchemaParser {
       num <- parseNumber(value, elemName)
     } yield num.toInt
 
-  private def parseNonNegativeNumber(value: ujson.Value, elemName: String) =
+  private def parsePositiveNumber(value: ujson.Value, elemName: String) =
     for {
-      num <- parseNumber(value, elemName)
+      num<- parseNumber(value, elemName)
       result <-
         if (num <= 0)
           Left(ParserError(s"$elemName must be > 0"))
