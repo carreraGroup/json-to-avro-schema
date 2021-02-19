@@ -314,7 +314,12 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Some(maxProps) = root.schema.maxProperties
     maxProps should be(0)
   }
-  it should "parse minProperties"
+
+  it should "parse minProperties" in {
+    val input = ujson.Obj("minProperties" -> 221)
+    val Right(root) = JsonSchemaParser.parse(input)
+    root.schema.minProperties should be(221)
+  }
 
   it should "parse required" in {
     val input = ujson.Obj(

@@ -26,6 +26,7 @@ case class JsonSchema(
                        uniqueItems: Boolean,
                        contains: Option[JsonSchema],
                        maxProperties: Option[Int],
+                       minProperties: Int,
                        required: Seq[String],
                        properties: Map[String, JsonSchema],
                        patternProperties: Map[String, JsonSchema],
@@ -79,6 +80,7 @@ object JsonSchemaParser {
       uniqueItems <- parseUniqueItems(obj)
       contains <- parseSchemaOpt(obj, "contains")
       maxProps <- parseNonNegativeIntegerOpt(obj, "maxProperties")
+      minProps <- parseNonNegativeIntegerWithDefaultZero(obj, "minProperties")
       required <- parseRequired(obj)
       properties <- parseSchemaMap(obj, "properties")
       patternProps <- parsePatternProperties(obj)
@@ -114,6 +116,7 @@ object JsonSchemaParser {
         uniqueItems,
         contains,
         maxProps,
+        minProps,
         required,
         properties,
         patternProps,
