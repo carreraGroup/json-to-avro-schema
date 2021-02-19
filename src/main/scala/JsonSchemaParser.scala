@@ -240,7 +240,7 @@ object JsonSchemaParser {
   }
 
   private def parseSchemaOpt(obj: ujson.Obj, elemName: String) =
-    runOptParser(obj, elemName, optParser(parseSchema)(elemName))
+    runOptParser(obj, elemName, optParser(parseSchema))
 
   private def parseSchema(value: ujson.Value, errMsg: String) =
     for {
@@ -266,25 +266,25 @@ object JsonSchemaParser {
     parseNonNegativeIntegerWithDefault(0) _
 
   private def parseNonNegativeIntegerOpt(obj: ujson.Obj, elemName: String) =
-    runOptParser(obj, elemName, optParser(parseNonNegativeInteger)(elemName))
+    runOptParser(obj, elemName, optParser(parseNonNegativeInteger))
 
   private def parsePositiveNumberOpt(obj: ujson.Obj, elemName: String) =
-    runOptParser(obj, elemName, optParser(parsePositiveNumber)(elemName))
+    runOptParser(obj, elemName, optParser(parsePositiveNumber))
 
   private def parseNumberOpt(obj: ujson.Obj, elemName: String) =
-    runOptParser(obj, elemName, optParser(parseNumber)(elemName))
+    runOptParser(obj, elemName, optParser(parseNumber))
 
   private def parseBoolOpt(value: ujson.Obj, elemName: String) =
-    runOptParser(value, elemName, optParser(parseBool)(elemName))
+    runOptParser(value, elemName, optParser(parseBool))
 
   private def parseUriOpt(value: ujson.Obj, elemName: String): Either[ParserError, Option[Uri]] =
-    runOptParser(value, elemName, optParser(parseUri)(elemName))
+    runOptParser(value, elemName, optParser(parseUri))
 
   private def parseStringOpt(value: ujson.Obj, elemName: String) =
-    runOptParser(value, elemName, optParser(parseString)(elemName))
+    runOptParser(value, elemName, optParser(parseString))
 
   private def parseAnyOpt(value: ujson.Obj, elemName: String) =
-    runOptParser(value, elemName, optParser(parseIdentity)(elemName))
+    runOptParser(value, elemName, optParser(parseIdentity))
 
   //TODO: DRY up number parsing with validation
   private def parseNonNegativeInteger(value: ujson.Value, elemName: String) =
@@ -344,10 +344,10 @@ object JsonSchemaParser {
 
   //TODO: Figure out how to make a function that's generic over several containers
   /** Checks for the existence of an element before running the parser */
-  private def runOptParser[T](value: ujson.Obj, elemName: String, parser: ujson.Value => Either[ParserError, Option[T]]) =
+  private def runOptParser[T](value: ujson.Obj, elemName: String, parser: String => ujson.Value => Either[ParserError, Option[T]]) =
     if (value.obj.keys.exists(k => k == elemName)) {
       val node = value(elemName)
-      parser(node)
+      parser(elemName)(node)
     }
     else
       Right(None)
