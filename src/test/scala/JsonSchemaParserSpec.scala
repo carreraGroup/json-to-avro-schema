@@ -396,6 +396,18 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     additionalProperties should be(foo)
   }
 
+  it should "parse dependencies"
+
+  it should "parse propertyNames" in {
+    val fooSchema = ujson.Obj("$id" -> "#foo")
+    val input = ujson.Obj("propertyNames" -> fooSchema)
+    val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
+
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(propertyNames) = root.schema.propertyNames
+    propertyNames should be(foo)
+  }
+
   it should "parse definitions" in {
     val fooProp = ujson.Obj("$id" -> "#foo")
     val barProp = ujson.Obj("$id" -> "#bar")
@@ -495,7 +507,4 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Some(not) = root.schema.not
     not should be(foo)
   }
-
-  it should "parse dependencies"
-  it should "parse propertyNames"
 }

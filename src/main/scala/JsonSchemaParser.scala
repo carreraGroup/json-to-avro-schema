@@ -31,6 +31,7 @@ case class JsonSchema(
                        properties: Map[String, JsonSchema],
                        patternProperties: Map[String, JsonSchema],
                        additionalProperties: Option[JsonSchema],
+                       propertyNames: Option[JsonSchema],
                        const: Option[ujson.Value],
                        types: Seq[String],
                        enum: Seq[ujson.Value],
@@ -85,6 +86,7 @@ object JsonSchemaParser {
       properties <- parseSchemaMap(obj, "properties")
       patternProps <- parsePatternProperties(obj)
       additionalProps <- parseSchemaOpt(obj, "additionalProperties")
+      propNames <- parseSchemaOpt(obj, "propertyNames")
       const <- parseAnyOpt(obj, "const")
       types <- parseTypes(obj)
       enum <- parseEnum(obj)
@@ -121,6 +123,7 @@ object JsonSchemaParser {
         properties,
         patternProps,
         additionalProps,
+        propNames,
         const,
         types,
         enum,
