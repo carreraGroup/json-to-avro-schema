@@ -52,27 +52,27 @@ object JsonSchemaParser {
    * */
   def parseSubSchema(obj: ujson.Obj): Either[ParserError, JsonSchema] =
     for {
-      id <- parseUri(obj, "$id")
-      ref <- parseUri(obj, "$ref")
-      title <- parseString(obj, "title")
-      desc <- parseString(obj, "description")
+      id <- parseUriOpt(obj, "$id")
+      ref <- parseUriOpt(obj, "$ref")
+      title <- parseStringOpt(obj, "title")
+      desc <- parseStringOpt(obj, "description")
       definitions <- parseSchemaMap(obj, "definitions")
-      default <- parseAny(obj, "default")
-      multipleOf <- parseMultipleOf(obj)
-      max <- parseNumber(obj, "maximum")
-      exclMax <- parseNumber(obj, "exclusiveMaximum")
-      min <- parseNumber(obj, "minimum")
-      exclMin <- parseNumber(obj, "exclusiveMinimum")
-      maxLen <- parsePositiveInteger(obj, "maxLength")
+      default <- parseAnyOpt(obj, "default")
+      multipleOf <- parseNumberGreaterThanZeroOpt(obj, "multipleOf")
+      max <- parseNumberOpt(obj, "maximum")
+      exclMax <- parseNumberOpt(obj, "exclusiveMaximum")
+      min <- parseNumberOpt(obj, "minimum")
+      exclMin <- parseNumberOpt(obj, "exclusiveMinimum")
+      maxLen <- parsePositiveIntegerOpt(obj, "maxLength")
       minLen <- parsePositiveIntegerWithDefaultZero(obj, "minLength")
-      pattern <- parsePattern(obj)
+      pattern <- parsePatternOpt(obj)
       items <- parseItems(obj)
-      maxItems <- parsePositiveInteger(obj, "maxItems")
+      maxItems <- parsePositiveIntegerOpt(obj, "maxItems")
       minItems <- parsePositiveIntegerWithDefaultZero(obj, "minItems")
       uniqueItems <- parseUniqueItems(obj)
       required <- parseRequired(obj)
       properties <- parseSchemaMap(obj, "properties")
-      const <- parseAny(obj, "const")
+      const <- parseAnyOpt(obj, "const")
       types <- parseTypes(obj)
       enum <- parseEnum(obj)
       allOf <- parseSchemaArray(obj, "allOf")
@@ -176,21 +176,12 @@ object JsonSchemaParser {
   private def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
     //TODO: The spec says the schema uri must include a scheme. Validate it does.
     // https://tools.ietf.org/html/draft-wright-json-schema-01#section-7
-    parseUri(obj, "$schema")
+    parseUriOpt(obj, "$schema")
   }
-
-  private def parseMultipleOf(obj: ujson.Obj) =
-    for {
-      num <- parseNumber(obj, "multipleOf")
-      result <- num match {
-        case Some(v) => if (v <= 0) Left(ParserError("multipleOf must be > 0")) else Right(num)
-        case None => Right(None)
-      }
-    } yield result
 
   private def parseUniqueItems(obj: ujson.Obj) =
     for {
-      maybeBool <- parseBool(obj, "uniqueItems")
+      maybeBool <- parseBoolOpt(obj, "uniqueItems")
     } yield maybeBool match {
       case Some(b) => b
       case None => false
@@ -230,14 +221,8 @@ object JsonSchemaParser {
     }
   }
 
-  private def parseSchemaOpt(obj: ujson.Obj, elemName: String) = {
-    val parser = (node: ujson.Value) => {
-      for {
-        schema <- parseSchema(node, s"$elemName must be object")
-      } yield Some(schema)
-    }
-    runOptParser(obj, elemName, parser)
-  }
+  private def parseSchemaOpt(obj: ujson.Obj, elemName: String) =
+    runOptParser(obj, elemName, optParser(parseSchema)(elemName))
 
   private def parseSchema(value: ujson.Value, errMsg: String) = {
     for {
@@ -246,23 +231,24 @@ object JsonSchemaParser {
     } yield schema
   }
 
-  private def parsePattern(obj: ujson.Obj) = {
+  private def parsePatternOpt(obj: ujson.Obj) = {
     //TODO: verify value is a ECMA 262 regex
-    parseString(obj, "pattern")
+    parseStringOpt(obj, "pattern")
   }
 
   private def parsePositiveIntegerWithDefault(default: Int)(obj: ujson.Obj, elemName: String) =
     for {
-      num <- parsePositiveInteger(obj, elemName)
+      num <- parsePositiveIntegerOpt(obj, elemName)
       result = num.getOrElse(default)
     } yield result
 
   private def parsePositiveIntegerWithDefaultZero =
     parsePositiveIntegerWithDefault(0) _
 
-  private def parsePositiveInteger(obj: ujson.Obj, elemName: String) =
+  //TODO: use optParser
+  private def parsePositiveIntegerOpt(obj: ujson.Obj, elemName: String) =
     for {
-      num <- parseInteger(obj, elemName)
+      num <- parseIntegerOpt(obj, elemName)
       result <- num match {
         case Some(n) =>
           if (n < 0)
@@ -273,51 +259,67 @@ object JsonSchemaParser {
       }
     } yield result
 
-  private def parseInteger(obj: ujson.Obj, elemName: String) =
+  private def parseIntegerOpt(obj: ujson.Obj, elemName: String) =
+    runOptParser(obj, elemName, optParser(parseInteger)(elemName))
+
+  private def parseNumberGreaterThanZeroOpt(obj: ujson.Obj, elemName: String) =
     for {
-      num <- parseNumber(obj, elemName)
-      result = num.map(_.toInt)
+      num <- parseNumberOpt(obj, elemName)
+      result <- num match {
+        case Some(v) => if (v <= 0) Left(ParserError(s"$elemName must be > 0")) else Right(num)
+        case None => Right(None)
+      }
     } yield result
 
-  private def parseUri(value: ujson.Obj, elemName: String): Either[ParserError, Option[Uri]] = {
-    val parser = (node: ujson.Value) => {
-      for {
-        uriStr <- node.strOpt.toRight(ParserError(s"$elemName must be a URI string"))
-        uri <- Uri.parseOption(uriStr).toRight(ParserError(s"Invalid $elemName URI"))
-      } yield Some(uri)
-    }
-    runOptParser(value, elemName, parser)
-  }
+  private def parseNumberOpt(obj: ujson.Obj, elemName: String) =
+    runOptParser(obj, elemName, optParser(parseNumber)(elemName))
 
-  private def parseNumber(obj: ujson.Obj, elemName: String): Either[ParserError, Option[Double]] = {
-    val parser = (node: ujson.Value) => {
-      for {
-        num <- node.numOpt.toRight(ParserError(s"$elemName must be a number"))
-      } yield Some(num)
-    }
-    runOptParser(obj, elemName, parser)
-  }
+  private def parseBoolOpt(value: ujson.Obj, elemName: String) =
+    runOptParser(value, elemName, optParser(parseBool)(elemName))
 
-  private def parseBool(value: ujson.Obj, elemName: String) = {
-    val parser = (node: ujson.Value) => {
-      for {
-        result <- node.boolOpt.toRight(ParserError(s"$elemName must be a boolean"))
-      } yield Some(result)
-    }
-    runOptParser(value, elemName, parser)
-  }
+  private def parseUriOpt(value: ujson.Obj, elemName: String): Either[ParserError, Option[Uri]] =
+    runOptParser(value, elemName, optParser(parseUri)(elemName))
 
-  private def parseString(value: ujson.Obj, elemName: String): Either[ParserError, Option[String]] = {
-    val parser = (node: ujson.Value) => {
-      for {
-        result <- node.strOpt.toRight(ParserError(s"$elemName must be a String"))
-      } yield Some(result)
-    }
-    runOptParser(value, elemName, parser)
-  }
+  private def parseStringOpt(value: ujson.Obj, elemName: String) =
+    runOptParser(value, elemName, optParser(parseString)(elemName))
 
-  private def parseAny(value: ujson.Obj, elemName: String) =
-    runOptParser(value, elemName, node => Right(Some(node)))
+  private def parseAnyOpt(value: ujson.Obj, elemName: String) =
+    runOptParser(value, elemName, optParser(parseIdentity)(elemName))
+
+  private def parseInteger(value: ujson.Value, elemName: String) =
+    for {
+      num <- parseNumber(value, elemName)
+    } yield num.toInt
+
+  private def parseNumber(value: ujson.Value, elemName: String) =
+    for {
+      num <- value.numOpt.toRight(ParserError(s"$elemName must be a number"))
+    } yield num
+
+  private def parseBool(value: ujson.Value, elemName: String) =
+    for {
+      result <- value.boolOpt.toRight(ParserError(s"$elemName must be a boolean"))
+    } yield result
+
+  private def parseUri(value: ujson.Value, elemName: String) =
+    for {
+      uriStr <- parseString(value, elemName)
+      uri <- Uri.parseOption(uriStr).toRight(ParserError(s"Invalid $elemName URI"))
+    } yield uri
+
+  private def parseString(value: ujson.Value, elemName: String) =
+    for {
+      result <- value.strOpt.toRight(ParserError(s"$elemName must be a String"))
+    } yield result
+
+  private def parseIdentity(value: ujson.Value, elemName: String) =
+    Right(value).withLeft[ParserError]
+
+  private def optParser[T](parser: (ujson.Value,String) => Either[ParserError,T])(elemName: String)(value: ujson.Value) = {
+    for {
+      result <- parser(value, elemName)
+    } yield Option(result)
+  }
 
   //TODO: Figure out how to make a function that's generic over several containers
   /** Checks for the existence of an element before running the parser */
