@@ -29,6 +29,7 @@ case class JsonSchema(
                        enum: Seq[ujson.Value],
                        allOf: Seq[JsonSchema],
                        anyOf: Seq[JsonSchema],
+                       oneOf: Seq[JsonSchema],
                      )
 
 object JsonSchemaParser {
@@ -73,6 +74,7 @@ object JsonSchemaParser {
       enum <- parseEnum(obj)
       allOf <- parseSchemaArray(obj, "allOf")
       anyOf <- parseSchemaArray(obj, "anyOf")
+      oneOf <- parseSchemaArray(obj, "oneOf")
     } yield
       JsonSchema(
         id,
@@ -99,6 +101,7 @@ object JsonSchemaParser {
         enum,
         allOf,
         anyOf,
+        oneOf,
       )
 
   private def parseItems(value: ujson.Obj) = {

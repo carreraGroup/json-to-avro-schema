@@ -394,4 +394,15 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(root) = JsonSchemaParser.parse(input)
     root.schema.anyOf should be(Seq(foo))
   }
+
+  it should "parse oneOf" in {
+    val fooSchema = ujson.Obj("$id" -> "#foo")
+    val input = ujson.Obj(
+      "oneOf" -> ujson.Arr(fooSchema)
+    )
+    val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
+
+    val Right(root) = JsonSchemaParser.parse(input)
+    root.schema.oneOf should be(Seq(foo))
+  }
 }
