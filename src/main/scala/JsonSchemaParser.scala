@@ -20,6 +20,7 @@ case class JsonSchema(
                        minLength: Int,
                        pattern: Option[String],
                        items: Seq[JsonSchema],
+                       additionalItems: Option[JsonSchema],
                        maxItems: Option[Int],
                        minItems: Int,
                        uniqueItems: Boolean,
@@ -69,6 +70,7 @@ object JsonSchemaParser {
       minLen <- parsePositiveIntegerWithDefaultZero(obj, "minLength")
       pattern <- parsePatternOpt(obj)
       items <- parseItems(obj)
+      additionalItems <- parseSchemaOpt(obj, "additionalItems")
       maxItems <- parsePositiveIntegerOpt(obj, "maxItems")
       minItems <- parsePositiveIntegerWithDefaultZero(obj, "minItems")
       uniqueItems <- parseUniqueItems(obj)
@@ -100,6 +102,7 @@ object JsonSchemaParser {
         minLen,
         pattern,
         items,
+        additionalItems,
         maxItems,
         minItems,
         uniqueItems,

@@ -236,6 +236,15 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     barId should be(Uri.parse("#bar"))
   }
 
+  it should "parse additionalItems" in {
+    val input = ujson.Obj(
+      "additionalItems" -> ujson.Obj("$id" -> "#foo")
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(additionalItems) = root.schema.additionalItems
+    additionalItems.id should be(Some(Uri.parse("#foo")))
+  }
+
   it should "default items to empty list" in {
     val input = ujson.Obj("$id" -> "#foo")
     val Right(root) = JsonSchemaParser.parse(input)
@@ -457,7 +466,6 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     not should be(foo)
   }
 
-  it should "parse additionalItems"
   it should "parse format"
   it should "parse contains"
   it should "parse maxProperties"
