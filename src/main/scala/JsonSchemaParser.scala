@@ -28,6 +28,7 @@ case class JsonSchema(
                        types: Seq[String],
                        enum: Seq[ujson.Value],
                        allOf: Seq[JsonSchema],
+                       anyOf: Seq[JsonSchema],
                      )
 
 object JsonSchemaParser {
@@ -70,7 +71,8 @@ object JsonSchemaParser {
       const <- parseAny(obj, "const")
       types <- parseTypes(obj)
       enum <- parseEnum(obj)
-      allOf <- parseAllOf(obj)
+      allOf <- parseSchemaArray(obj, "allOf")
+      anyOf <- parseSchemaArray(obj, "anyOf")
     } yield
       JsonSchema(
         id,
@@ -96,6 +98,7 @@ object JsonSchemaParser {
         types,
         enum,
         allOf,
+        anyOf,
       )
 
   private def parseItems(value: ujson.Obj) = {
@@ -111,14 +114,14 @@ object JsonSchemaParser {
     runSeqParser(value, "items", parser)
   }
 
-  private def parseAllOf(value: ujson.Obj) = {
+  private def parseSchemaArray(value: ujson.Obj, elemName: String) = {
     val parser = (node: ujson.Value) => {
       for {
-        items <- node.arrOpt.toRight(ParserError("allOf must be an array"))
-        schemas <- parseSchemas(items, "allOf")
+        items <- node.arrOpt.toRight(ParserError(s"$elemName must be an array"))
+        schemas <- parseSchemas(items, elemName)
       } yield schemas
     }
-    runSeqParser(value, "allOf", parser)
+    runSeqParser(value, elemName, parser)
   }
 
   private def parseSchemas(items: IterableOnce[ujson.Value], elemName: String) = {
