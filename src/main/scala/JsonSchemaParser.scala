@@ -31,6 +31,7 @@ case class JsonSchema(
                        const: Option[ujson.Value],
                        types: Seq[String],
                        enum: Seq[ujson.Value],
+                       format: Option[String],
                        allOf: Seq[JsonSchema],
                        anyOf: Seq[JsonSchema],
                        oneOf: Seq[JsonSchema],
@@ -81,6 +82,7 @@ object JsonSchemaParser {
       const <- parseAnyOpt(obj, "const")
       types <- parseTypes(obj)
       enum <- parseEnum(obj)
+      format <- parseStringOpt(obj, "format")
       allOf <- parseSchemaArray(obj, "allOf")
       anyOf <- parseSchemaArray(obj, "anyOf")
       oneOf <- parseSchemaArray(obj, "oneOf")
@@ -113,6 +115,7 @@ object JsonSchemaParser {
         const,
         types,
         enum,
+        format,
         allOf,
         anyOf,
         oneOf,

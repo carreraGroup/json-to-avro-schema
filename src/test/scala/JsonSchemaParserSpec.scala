@@ -423,6 +423,13 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     root.schema.enum should be(Seq(ujson.Str("somevalue"), ujson.Bool(true)))
   }
 
+  it should "parse format" in {
+    val input = ujson.Obj("format" -> ujson.Str("email"))
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(format) = root.schema.format
+    format should be("email")
+  }
+
   it should "parse allOf" in {
     val fooSchema = ujson.Obj("$id" -> "#foo")
     val input = ujson.Obj(
@@ -466,7 +473,6 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     not should be(foo)
   }
 
-  it should "parse format"
   it should "parse contains"
   it should "parse maxProperties"
   it should "parse minProperties"
