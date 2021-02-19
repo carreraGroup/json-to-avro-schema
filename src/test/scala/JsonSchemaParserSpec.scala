@@ -292,4 +292,33 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Left(err) = JsonSchemaParser.parse(input)
     err.getMessage should be("uniqueItems must be a boolean")
   }
+
+  it should "parse required" in {
+    val input = ujson.Obj(
+      "required" -> ujson.Arr("someProperty", "someOtherProp")
+    )
+    val Right(root) = JsonSchemaParser.parse(input)
+    root.schema.required should be(Seq("someProperty", "someOtherProp"))
+  }
+
+  it should "default required to empty array" in {
+    val input = ujson.Obj("$id" -> "#foo")
+    val Right(root) = JsonSchemaParser.parse(input)
+    root.schema.required should be(Seq())
+  }
+
+  it should "fail if required not an array" in {
+    val input = ujson.Obj("required" -> ujson.Bool(false))
+    val Left(err) = JsonSchemaParser.parse(input)
+    err.getMessage should be("required must be an array")
+  }
+
+  it should "fail if required array items are not strings" in {
+    val input = ujson.Obj(
+      "required" -> ujson.Arr(ujson.Bool(true))
+    )
+    val Left(err) = JsonSchemaParser.parse(input)
+    err.getMessage should be("required array contents must be strings")
+  }
+
 }

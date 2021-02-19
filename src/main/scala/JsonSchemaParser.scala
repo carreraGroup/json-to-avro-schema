@@ -19,7 +19,8 @@ case class JsonSchema(
                        items: Seq[JsonSchema],
                        maxItems: Option[Int],
                        minItems: Int,
-                       uniqueItems: Boolean
+                       uniqueItems: Boolean,
+                       required: Seq[String]
                      )
 
 object JsonSchemaParser {
@@ -56,6 +57,7 @@ object JsonSchemaParser {
       maxItems <- parsePositiveInteger(obj, "maxItems")
       minItems <- parsePositiveIntegerWithDefaultZero(obj, "minItems")
       uniqueItems <- parseUniqueItems(obj)
+      required <- parseRequired(obj)
     } yield
       JsonSchema(
         id,
@@ -74,6 +76,7 @@ object JsonSchemaParser {
         maxItems,
         minItems,
         uniqueItems,
+        required,
       )
 
   private def parseItems(value: ujson.Obj) = {
@@ -93,6 +96,25 @@ object JsonSchemaParser {
       } yield items
     }
     runSeqParser(value, "items", parser)
+  }
+
+  private def parseRequired(value: ujson.Obj) = {
+    val parser = (node: ujson.Value) => {
+      for {
+        required <-
+          node
+            .arrOpt
+            .toRight(ParserError("required must be an array"))
+            .map(_.toSeq)
+        props <- required.foldLeft(Right(Seq[String]()).withLeft[ParserError]) { case (acc, cur) =>
+          for {
+            last <- acc
+            prop <- cur.strOpt.toRight(ParserError("required array contents must be strings"))
+          } yield last :+ prop
+        }
+      } yield props
+    }
+    runSeqParser(value, "required", parser)
   }
 
   private def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
