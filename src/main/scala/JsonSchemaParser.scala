@@ -30,6 +30,7 @@ case class JsonSchema(
                        allOf: Seq[JsonSchema],
                        anyOf: Seq[JsonSchema],
                        oneOf: Seq[JsonSchema],
+                       not: Option[JsonSchema],
                      )
 
 object JsonSchemaParser {
@@ -75,6 +76,7 @@ object JsonSchemaParser {
       allOf <- parseSchemaArray(obj, "allOf")
       anyOf <- parseSchemaArray(obj, "anyOf")
       oneOf <- parseSchemaArray(obj, "oneOf")
+      not <- parseSchema(obj, "not")
     } yield
       JsonSchema(
         id,
@@ -102,6 +104,7 @@ object JsonSchemaParser {
         allOf,
         anyOf,
         oneOf,
+        not,
       )
 
   private def parseItems(value: ujson.Obj) = {
@@ -170,6 +173,16 @@ object JsonSchemaParser {
       } yield props
     }
     runMapParser(obj, "properties", parser)
+  }
+
+  private def parseSchema(obj: ujson.Obj, elemName: String) = {
+    val parser = (node: ujson.Value) => {
+      for {
+        obj <- node.objOpt.toRight(ParserError(s"$elemName must be object"))
+        schema <- parseSubSchema(obj)
+      } yield Some(schema)
+    }
+    runOptParser(obj, elemName, parser)
   }
 
   private def parseTypes(obj: ujson.Obj) = {
