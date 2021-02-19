@@ -25,6 +25,8 @@ case class JsonSchema(
                        uniqueItems: Boolean,
                        required: Seq[String],
                        properties: Map[String, JsonSchema],
+                       patternProperties: Map[String, JsonSchema],
+                       additionalProperties: Option[JsonSchema],
                        const: Option[ujson.Value],
                        types: Seq[String],
                        enum: Seq[ujson.Value],
@@ -72,6 +74,8 @@ object JsonSchemaParser {
       uniqueItems <- parseUniqueItems(obj)
       required <- parseRequired(obj)
       properties <- parseSchemaMap(obj, "properties")
+      patternProps <- parsePatternProperties(obj)
+      additionalProps <- parseSchemaOpt(obj, "additionalProperties")
       const <- parseAnyOpt(obj, "const")
       types <- parseTypes(obj)
       enum <- parseEnum(obj)
@@ -101,6 +105,8 @@ object JsonSchemaParser {
         uniqueItems,
         required,
         properties,
+        patternProps,
+        additionalProps,
         const,
         types,
         enum,
@@ -229,6 +235,10 @@ object JsonSchemaParser {
       obj <- value.objOpt.toRight(ParserError(errMsg))
       schema <- parseSubSchema(obj)
     } yield schema
+
+  private def parsePatternProperties(obj: ujson.Obj) =
+    //TODO: verify keys are ECMA 262 regexes
+    parseSchemaMap(obj, "patternProperties")
 
   private def parsePatternOpt(obj: ujson.Obj) =
     //TODO: verify value is a ECMA 262 regex

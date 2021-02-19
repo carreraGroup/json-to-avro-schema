@@ -335,6 +335,35 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     props should be(Map("foo" -> expectedFoo, "bar" -> expectedBar))
   }
 
+  it should "default properties to empty map" in {
+    val input = ujson.Obj("$id" -> "#foo")
+    val Right(root) = JsonSchemaParser.parse(input)
+    root.schema.properties should be(Map())
+  }
+
+  it should "parse patternProperties" in {
+    val fooSchema = ujson.Obj("$id" -> "#foo")
+    val input = ujson.Obj(
+      "patternProperties" -> ujson.Obj(
+        "^S_" -> fooSchema
+      )
+    )
+    val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
+
+    val Right(root) = JsonSchemaParser.parse(input)
+    root.schema.patternProperties should be(Map("^S_" -> foo))
+  }
+
+  it should "parse additionalProperties" in {
+    val fooSchema = ujson.Obj("$id" -> "#foo")
+    val input = ujson.Obj("additionalProperties" -> fooSchema)
+    val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
+
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Some(additionalProperties) = root.schema.additionalProperties
+    additionalProperties should be(foo)
+  }
+
   it should "parse definitions" in {
     val fooProp = ujson.Obj("$id" -> "#foo")
     val barProp = ujson.Obj("$id" -> "#bar")
@@ -351,12 +380,6 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(root) = JsonSchemaParser.parse(input)
     val props = root.schema.definitions
     props should be(Map("foo" -> expectedFoo, "bar" -> expectedBar))
-  }
-
-  it should "default properties to empty map" in {
-    val input = ujson.Obj("$id" -> "#foo")
-    val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.properties should be(Map())
   }
 
   it should "parse const" in {
@@ -433,4 +456,13 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Some(not) = root.schema.not
     not should be(foo)
   }
+
+  it should "parse additionalItems"
+  it should "parse format"
+  it should "parse contains"
+  it should "parse maxProperties"
+  it should "parse minProperties"
+
+  it should "parse dependencies"
+  it should "parse propertyNames"
 }
