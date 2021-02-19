@@ -9,6 +9,7 @@ case class JsonSchema(
                        ref: Option[Uri],
                        title: Option[String],
                        desc: Option[String],
+                       default: Option[ujson.Value],
                        multipleOf: Option[Double],
                        maximum: Option[Double],
                        exclusiveMaximum: Option[Double],
@@ -22,7 +23,8 @@ case class JsonSchema(
                        minItems: Int,
                        uniqueItems: Boolean,
                        required: Seq[String],
-                       properties: Map[String, JsonSchema]
+                       properties: Map[String, JsonSchema],
+                       const: Option[ujson.Value],
                      )
 
 object JsonSchemaParser {
@@ -47,6 +49,7 @@ object JsonSchemaParser {
       ref <- parseUri(obj, "$ref")
       title <- parseString(obj, "title")
       desc <- parseString(obj, "description")
+      default <- parseAny(obj, "default")
       multipleOf <- parseMultipleOf(obj)
       max <- parseNumber(obj, "maximum")
       exclMax <- parseNumber(obj, "exclusiveMaximum")
@@ -61,12 +64,14 @@ object JsonSchemaParser {
       uniqueItems <- parseUniqueItems(obj)
       required <- parseRequired(obj)
       properties <- parseProperties(obj)
+      const <- parseAny(obj, "const")
     } yield
       JsonSchema(
         id,
         ref,
         title,
         desc,
+        default,
         multipleOf,
         max,
         exclMax,
@@ -81,6 +86,7 @@ object JsonSchemaParser {
         uniqueItems,
         required,
         properties,
+        const,
       )
 
   private def parseItems(value: ujson.Obj) = {
@@ -229,6 +235,9 @@ object JsonSchemaParser {
     }
     runOptParser(value, elemName, parser)
   }
+
+  private def parseAny(value: ujson.Obj, elemName: String) =
+    runOptParser(value, elemName, node => Right(Some(node)))
 
   //TODO: Figure out how to make a function that's generic over several containers
   /** Checks for the existence of an element before running the parser */

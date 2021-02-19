@@ -88,21 +88,17 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     desc should be("this is a pretty useless schema")
   }
 
-  ignore should "parse default" in {
-    /*
-     * This can be any JSON value.
-     * https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-7.3
-     *
-     * I have no idea how we'll translate this to an AVRO default.
-     * Thankfully, the fhir schema does not use JSON Schema defaults.
-     */
+  it should "parse default" in {
+    val input = ujson.Obj("default" -> ujson.Bool(true))
+    val Right(root) = JsonSchemaParser.parse(input)
+    // can be any ujson.Value
+    val Some(default) = root.schema.default
+    default should be(ujson.Bool(true))
   }
 
   ignore should "parse examples" in {
     /*
-     * AVRO doesn't have any equivalent
-     * and the values inside the array suffer the same problem as default.
-     * They can be any JSON value.
+     * AVRO doesn't seem to have any equivalent
      *
      * https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-7.4
      */
@@ -343,5 +339,14 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val input = ujson.Obj("$id" -> "#foo")
     val Right(root) = JsonSchemaParser.parse(input)
     root.schema.properties should be(Map())
+  }
+
+  it should "parse const" in {
+    val input = ujson.Obj("const" -> ujson.Str("hi"))
+    val Right(root) = JsonSchemaParser.parse(input)
+    // can be any ujson.Value
+    // https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-6.24
+    val Some(const) = root.schema.const
+    const should be(ujson.Str("hi"))
   }
 }
