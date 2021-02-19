@@ -9,6 +9,7 @@ case class JsonSchema(
                        ref: Option[Uri],
                        title: Option[String],
                        desc: Option[String],
+                       definitions: Map[String, JsonSchema],
                        default: Option[ujson.Value],
                        multipleOf: Option[Double],
                        maximum: Option[Double],
@@ -55,6 +56,7 @@ object JsonSchemaParser {
       ref <- parseUri(obj, "$ref")
       title <- parseString(obj, "title")
       desc <- parseString(obj, "description")
+      definitions <- parseSchemaMap(obj, "definitions")
       default <- parseAny(obj, "default")
       multipleOf <- parseMultipleOf(obj)
       max <- parseNumber(obj, "maximum")
@@ -83,6 +85,7 @@ object JsonSchemaParser {
         ref,
         title,
         desc,
+        definitions,
         default,
         multipleOf,
         max,
