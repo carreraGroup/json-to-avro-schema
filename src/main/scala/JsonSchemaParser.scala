@@ -187,8 +187,7 @@ object JsonSchemaParser {
 
   private def parseRequired(value: ujson.Obj)= {
     val elemName = "required"
-    val parser = parseStringArray(elemName)_
-    runSeqParser(value, elemName, arrayParser(parser)(elemName))
+    runSeqParser(value, elemName, arrayParser(parseStringArray(elemName))(elemName))
   }
 
   private def parseTypes(obj: ujson.Obj) = {
@@ -218,10 +217,7 @@ object JsonSchemaParser {
 
   private def parseEnum(obj: ujson.Obj) = {
     val elemName = "enum"
-    val parser = (items: IterableOnce[ujson.Value]) =>
-      Right(items.iterator.toSeq)
-
-    runSeqParser(obj, elemName, arrayParser(parser)(elemName))
+    runSeqParser(obj, elemName, arrayParser(items => Right(items.iterator.toSeq))(elemName))
   }
 
   private def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
@@ -238,10 +234,8 @@ object JsonSchemaParser {
       case None => false
     }
 
-  private def parseSchemaArray(value: ujson.Obj, elemName: String) = {
-    val parser = parseSchemas(elemName)_
-    runSeqParser(value, elemName, arrayParser(parser)(elemName))
-  }
+  private def parseSchemaArray(value: ujson.Obj, elemName: String) =
+    runSeqParser(value, elemName, arrayParser(parseSchemas(elemName))(elemName))
 
   private def parseSchemas(elemName: String)(items: IterableOnce[ujson.Value]) = {
     items.iterator.foldLeft(Right(Seq[JsonSchema]()).withLeft[ParserError]) { case (acc, cur) =>
@@ -311,9 +305,7 @@ object JsonSchemaParser {
     } yield result
 
   private def parseInteger(value: ujson.Value, elemName: String) =
-    for {
-      num <- parseNumber(value, elemName)
-    } yield num.toInt
+    parseNumber(value, elemName).map(_.toInt)
 
   private def parsePositiveNumber(value: ujson.Value, elemName: String) =
     for {
@@ -326,14 +318,10 @@ object JsonSchemaParser {
     } yield result
 
   private def parseNumber(value: ujson.Value, elemName: String) =
-    for {
-      num <- value.numOpt.toRight(ParserError(s"$elemName must be a number"))
-    } yield num
+    value.numOpt.toRight(ParserError(s"$elemName must be a number"))
 
   private def parseBool(value: ujson.Value, elemName: String) =
-    for {
-      result <- value.boolOpt.toRight(ParserError(s"$elemName must be a boolean"))
-    } yield result
+    value.boolOpt.toRight(ParserError(s"$elemName must be a boolean"))
 
   private def parseUri(value: ujson.Value, elemName: String) =
     for {
@@ -342,9 +330,7 @@ object JsonSchemaParser {
     } yield uri
 
   private def parseString(value: ujson.Value, elemName: String) =
-    for {
-      result <- value.strOpt.toRight(ParserError(s"$elemName must be a string"))
-    } yield result
+    value.strOpt.toRight(ParserError(s"$elemName must be a string"))
 
   private def parseIdentity(value: ujson.Value, elemName: String) =
     Right(value).withLeft[ParserError]
