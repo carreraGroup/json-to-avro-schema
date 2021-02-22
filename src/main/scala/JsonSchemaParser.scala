@@ -187,13 +187,8 @@ object JsonSchemaParser {
 
   private def parseRequired(value: ujson.Obj)= {
     val elemName = "required"
-    val parser = (items: IterableOnce[ujson.Value]) => {
-      for {
-        props <- parseStringArray(elemName)(items)
-      } yield props
-    }
-
-    runSeqParser(value, "required", arrayParser(parser)(elemName))
+    val parser = parseStringArray(elemName)_
+    runSeqParser(value, elemName, arrayParser(parser)(elemName))
   }
 
   private def parseTypes(obj: ujson.Obj) = {
