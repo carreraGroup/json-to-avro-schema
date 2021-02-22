@@ -140,21 +140,21 @@ object JsonSchemaParser {
       )
 
   private def parseItems(value: ujson.Obj) = {
+    val elemName = "items"
     val parser = (node: ujson.Value) => {
       for {
         items <- node match {
           case n: ujson.Obj => parseSubSchema(n).flatMap(schema => Right(Seq(schema)))
-          case ujson.Arr(a) => parseSchemas("items")(a)
-          case _ => Left(ParserError("items must be an object or array"))
+          case ujson.Arr(a) => parseSchemas(a, elemName)
+          case _ => Left(ParserError(s"$elemName must be an object or array"))
         }
       } yield items
     }
-    runSeqParser(value, "items", parser)
+    runSeqParser(value, elemName, parser)
   }
 
   private def parseDependencies(obj: ujson.Obj) = {
-    val elemName = "dependencies"
-    val parser = (rawProps: mutable.AbstractMap[String, ujson.Value]) => {
+    val parser = (rawProps: mutable.AbstractMap[String, ujson.Value], elemName: String) => {
       rawProps.foldLeft(Right(Map[String, Either[Seq[String], JsonSchema]]()).withLeft[ParserError]) { case (acc, (k,v)) =>
         for {
           last <- acc
@@ -163,18 +163,19 @@ object JsonSchemaParser {
               parseSchema(obj, "expected object")
                 .map(s => Right(s))
             case ujson.Arr(arr) =>
-              parseStringArray(elemName)(arr)
+              parseStringArray(arr, elemName)
                 .map(a => Left(a))
             case _ => Left(ParserError(s"$elemName values must be an object or string array"))
           }
         } yield last + (k -> result)
       }
     }
+    val elemName = "dependencies"
     runMapParser(obj, elemName, mapParser(parser)(elemName))
   }
 
   private def parseSchemaMap(obj: ujson.Obj, elemName: String): Either[ParserError, Map[String,JsonSchema]] = {
-    val parser = (rawProps: mutable.AbstractMap[String, ujson.Value]) => {
+    val parser = (rawProps: mutable.AbstractMap[String, ujson.Value], elemName: String) => {
       rawProps.foldLeft(Right(Map[String,JsonSchema]()).withLeft[ParserError]) { case (acc, (k, v)) =>
         for {
           last <- acc
@@ -187,7 +188,7 @@ object JsonSchemaParser {
 
   private def parseRequired(value: ujson.Obj)= {
     val elemName = "required"
-    runSeqParser(value, elemName, arrayParser(parseStringArray(elemName))(elemName))
+    runSeqParser(value, elemName, arrayParser(parseStringArray)(elemName))
   }
 
   private def parseTypes(obj: ujson.Obj) = {
@@ -196,7 +197,7 @@ object JsonSchemaParser {
       for {
         types <- node match {
           case ujson.Str(s) => Right(Seq(s))
-          case ujson.Arr(a) => parseStringArray(elemName)(a)
+          case ujson.Arr(a) => parseStringArray(a, elemName)
           case _ => Left(ParserError(s"$elemName must be a string or array"))
         }
       } yield types
@@ -204,7 +205,7 @@ object JsonSchemaParser {
     runSeqParser(obj, elemName, parser)
   }
 
-  private def parseStringArray(elemName: String)(items: IterableOnce[ujson.Value]) = {
+  private def parseStringArray(items: IterableOnce[ujson.Value], elemName: String) = {
     for {
       elems <- items.iterator.foldLeft(Right(Seq[String]()).withLeft[ParserError]) { case (acc, cur) =>
         for {
@@ -217,7 +218,7 @@ object JsonSchemaParser {
 
   private def parseEnum(obj: ujson.Obj) = {
     val elemName = "enum"
-    runSeqParser(obj, elemName, arrayParser(items => Right(items.iterator.toSeq))(elemName))
+    runSeqParser(obj, elemName, arrayParser((items,_) => Right(items.iterator.toSeq))(elemName))
   }
 
   private def parseSchemaUri(obj: ujson.Obj): Either[ParserError, Option[Uri]] = {
@@ -235,9 +236,9 @@ object JsonSchemaParser {
     }
 
   private def parseSchemaArray(value: ujson.Obj, elemName: String) =
-    runSeqParser(value, elemName, arrayParser(parseSchemas(elemName))(elemName))
+    runSeqParser(value, elemName, arrayParser(parseSchemas)(elemName))
 
-  private def parseSchemas(elemName: String)(items: IterableOnce[ujson.Value]) = {
+  private def parseSchemas(items: IterableOnce[ujson.Value], elemName: String) = {
     items.iterator.foldLeft(Right(Seq[JsonSchema]()).withLeft[ParserError]) { case (acc, cur) =>
       for {
         last <- acc
@@ -336,21 +337,21 @@ object JsonSchemaParser {
     Right(value).withLeft[ParserError]
 
   private def arrayParser[T]
-    (parser: IterableOnce[ujson.Value] => Either[ParserError, Seq[T]])
+    (parser: (IterableOnce[ujson.Value],String) => Either[ParserError, Seq[T]])
     (elemName: String)
     (node: ujson.Value) =
       for {
         items <- node.arrOpt.toRight(ParserError(s"$elemName must be an array"))
-        result <- parser(items)
+        result <- parser(items, elemName)
       } yield result
 
   private def mapParser[T]
-    (parser: mutable.AbstractMap[String, ujson.Value] => Either[ParserError, Map[String, T]])
+    (parser: (mutable.AbstractMap[String, ujson.Value],String) => Either[ParserError, Map[String, T]])
     (elemName: String)
     (node: ujson.Value) =
       for {
         rawProps <- node.objOpt.toRight(ParserError(s"$elemName must be an object"))
-        props <- parser(rawProps)
+        props <- parser(rawProps, elemName)
       } yield props
 
   private def optParser[T]
