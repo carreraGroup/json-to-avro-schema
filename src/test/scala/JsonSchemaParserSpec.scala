@@ -409,7 +409,7 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     actual should be(foo)
   }
 
-  ignore should "parse dependencies array" in {
+  it should "parse dependencies array" in {
     val input = ujson.Obj(
       "dependencies" -> ujson.Obj(
         "foo" -> ujson.Arr("bar", "baz", "qux")
