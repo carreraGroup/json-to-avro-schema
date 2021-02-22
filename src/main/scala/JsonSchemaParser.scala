@@ -2,6 +2,8 @@ package io.carrera.jsontoavroschema
 
 import io.lemonlabs.uri.Uri
 
+import scala.collection.mutable
+
 case class RootJsonSchema(schemaUri: Option[Uri], schema: JsonSchema)
 
 case class JsonSchema(
@@ -151,41 +153,36 @@ object JsonSchemaParser {
   }
 
   private def parseDependencies(obj: ujson.Obj) = {
-    val parser = (node: ujson.Value) => {
-      for {
-        deps <- node.objOpt.toRight(ParserError(s"dependencies must be an object"))
-        props <- deps.foldLeft(Right(Map[String, Either[Seq[String], JsonSchema]]()).withLeft[ParserError]) { case (acc, (k,v)) =>
-          for {
-            last <- acc
-            result <- v match {
-              case obj: ujson.Obj =>
-                parseSchema(obj, "expected object")
-                  .map(s => Right(s))
-              case ujson.Arr(arr) =>
-                parseStringArray(arr, "dependencies")
-                  .map(a => Left(a))
-              case _ => Left(ParserError("dependencies values must be an object or string array"))
-            }
-          } yield last + (k -> result)
-        }
-      } yield props
+    val elemName = "dependencies"
+    val parser = (rawProps: mutable.AbstractMap[String, ujson.Value]) => {
+      rawProps.foldLeft(Right(Map[String, Either[Seq[String], JsonSchema]]()).withLeft[ParserError]) { case (acc, (k,v)) =>
+        for {
+          last <- acc
+          result <- v match {
+            case obj: ujson.Obj =>
+              parseSchema(obj, "expected object")
+                .map(s => Right(s))
+            case ujson.Arr(arr) =>
+              parseStringArray(arr, elemName)
+                .map(a => Left(a))
+            case _ => Left(ParserError(s"$elemName values must be an object or string array"))
+          }
+        } yield last + (k -> result)
+      }
     }
-    runMapParser(obj, "dependencies", parser)
+    runMapParser(obj, elemName, mapParser(parser)(elemName))
   }
 
   private def parseSchemaMap(obj: ujson.Obj, elemName: String): Either[ParserError, Map[String,JsonSchema]] = {
-    val parser = (node: ujson.Value) => {
-      for {
-        rawProps <- node.objOpt.toRight(ParserError(s"$elemName must be an object"))
-        props <- rawProps.foldLeft(Right(Map[String,JsonSchema]()).withLeft[ParserError]) { case (acc, (k, v)) =>
-          for {
-            last <- acc
-            schema <- parseSchema(v, s"$elemName values must be objects")
-          } yield last + (k -> schema)
-        }
-      } yield props
+    val parser = (rawProps: mutable.AbstractMap[String, ujson.Value]) => {
+      rawProps.foldLeft(Right(Map[String,JsonSchema]()).withLeft[ParserError]) { case (acc, (k, v)) =>
+        for {
+          last <- acc
+          schema <- parseSchema(v, s"$elemName values must be objects")
+        } yield last + (k -> schema)
+      }
     }
-    runMapParser(obj, elemName, parser)
+    runMapParser(obj, elemName, mapParser(parser)(elemName))
   }
 
   private def parseRequired(value: ujson.Obj)= {
@@ -370,11 +367,22 @@ object JsonSchemaParser {
   private def parseIdentity(value: ujson.Value, elemName: String) =
     Right(value).withLeft[ParserError]
 
-  private def optParser[T](parser: (ujson.Value,String) => Either[ParserError,T])(elemName: String)(value: ujson.Value) = {
-    for {
-      result <- parser(value, elemName)
-    } yield Option(result)
-  }
+  private def mapParser[T]
+    (parser: mutable.AbstractMap[String, ujson.Value] => Either[ParserError, Map[String, T]])
+    (elemName: String)
+    (node: ujson.Value) =
+      for {
+        rawProps <- node.objOpt.toRight(ParserError(s"$elemName must be an object"))
+        props <- parser(rawProps)
+      } yield props
+
+  private def optParser[T]
+    (parser: (ujson.Value,String) => Either[ParserError,T])
+    (elemName: String)
+    (node: ujson.Value) =
+      for {
+        result <- parser(node, elemName)
+      } yield Option(result)
 
   //TODO: Figure out how to make a function that's generic over several containers
   /** Checks for the existence of an element before running the parser */
