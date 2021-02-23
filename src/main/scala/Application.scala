@@ -48,15 +48,13 @@ object Application extends App {
   }
 
   @tailrec
-  private def parseArgs(args: List[String], accumulator: Map[String, String]): Either[String, Map[String,String]] = {
+  private def parseArgs(args: List[String], accumulator: Map[String, String]): Either[String, Map[String,String]] =
     args match {
       case Nil => Right(accumulator)
       case filePath :: Nil => Right(accumulator + ("inputFile" -> filePath))
-      case "-n" :: value :: tail => parseArgs(tail, accumulator + ("namespace" -> value))
-      case "--namespace" :: value :: tail => parseArgs(tail, accumulator + ("namespace" -> value))
+      case ("--namespace" | "-n") :: value :: tail => parseArgs(tail, accumulator + ("namespace" -> value))
       case x :: _ => Left (s"unrecognized option: $x")
     }
-  }
 
   private def getInputFilePath(options: Map[String,String]) =
     options.get("inputFile")
