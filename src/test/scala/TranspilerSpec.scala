@@ -15,6 +15,29 @@ class TranspilerSpec extends AnyFlatSpec {
     Transpiler.transpile(emptySchema, namespace) should be(Right(expected))
   }
 
+  it should "create a record" in {
+    val input = ujson.Obj(
+      "definitions" -> ujson.Obj(
+        "Element" -> ujson.Obj(
+          "description" -> "a description",
+          "properties" -> ujson.Obj("id" -> ujson.Obj("type" -> "string")) //fhir ids are not strings, but #/definitions/strings which do a regex validation
+        )
+      )
+    )
+    //TODO: make creating JsonSchema easy enough that we don't need to parse it
+    val Right(root) = JsonSchemaParser.parse(input)
+    val Right(avroSchema) = Transpiler.transpile(root.schema, None)
+
+    val expectedRecord =
+      AvroRecord(
+        "Element",
+        Some("a description"),
+        Seq(AvroField("id", None, AvroString(), None, None))
+      )
+
+    avroSchema.records.head should be(expectedRecord)
+  }
+
   def emptySchema: JsonSchema = JsonSchema(
     id = None,
     ref = None,
