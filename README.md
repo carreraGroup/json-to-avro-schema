@@ -24,3 +24,17 @@ sbt test
 ```console
 sbt "run [--namespace "com.example"] path/to/inputFile"
 ```
+
+## Architectural considerations
+
+This process is run as a source generation step and is therefore a build time concern, not a runtime one.
+This means that a solution need not be _fast_, only correct.
+Of course, we also don't want to be so slow that regenerating is a painful experience to be avoided.
+
+Being a build time concern also means a solution does not _necessarily_ need to run on the JVM.
+However, since the team building this spends most of their time developing in Scala,
+we chose the same implementation language.
+
+Long term, it would be nice to also generate a FHIR to Avro mapper along with the Avro schema definitions.
+Otherwise, we will need to continue manually adjusting the wrapper whenever we change the way the schemas are generated.
+We should do our best to allow for this to be easily implemented later.
