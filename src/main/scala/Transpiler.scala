@@ -26,17 +26,9 @@ object Transpiler {
    * Internally, we may do this though
    * JsonSchema -> A -> B -> C -> AvroSchema
    */
-  def transpile(schema: JsonSchema): Either[TranspileError, AvroSchema] = {
-    Right(AvroSchema(None, Seq()))
+  def transpile(schema: JsonSchema, namespace: Option[String]): Either[TranspileError, AvroSchema] = {
+    Right(AvroSchema(namespace, Seq()))
   }
-
-  def transpile(schema: JsonSchema, namespace: String): Either[TranspileError, AvroSchema] = {
-    Right(AvroSchema(Some(namespace), Seq()))
-  }
-
-  /*
-  def toJson(avroSchema: AvroRecord): ujson.Obj = ???
-   */
 }
 
 final case class TranspileError(message: String = "", cause: Throwable = None.orNull)

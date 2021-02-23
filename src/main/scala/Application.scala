@@ -22,8 +22,7 @@ object Application extends App {
             content <- loadFile(inputFilePath).toEither
             inputJson = readJson(content)
             jsonSchema <- JsonSchemaParser.parse(inputJson)
-            //TODO: if namespace if present, use it
-            avroSchema <- Transpiler.transpile(jsonSchema.schema)
+            avroSchema <- Transpiler.transpile(jsonSchema.schema, getNamespace(options))
             outputJson <- AvroWriter.toJson(avroSchema)
           } yield outputJson
           result match {

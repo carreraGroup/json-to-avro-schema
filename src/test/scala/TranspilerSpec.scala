@@ -1,21 +1,21 @@
 package io.carrera.jsontoavroschema
 
-import io.lemonlabs.uri.Url
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 
 class TranspilerSpec extends AnyFlatSpec {
   it should "take a JsonSchema and return an AvroSchema" in {
     val expected = AvroSchema(None, Seq())
-    Transpiler.transpile(emptySchema) should be(Right(expected))
+    Transpiler.transpile(emptySchema, None) should be(Right(expected))
   }
 
   it should "take namespace as an argument" in {
-    val expected = AvroSchema(Some("com.example.foo"), Seq())
-    Transpiler.transpile(emptySchema, "com.example.foo") should be(Right(expected))
+    val namespace = Some("com.example.foo")
+    val expected = AvroSchema(namespace, Seq())
+    Transpiler.transpile(emptySchema, namespace) should be(Right(expected))
   }
 
-  val emptySchema: JsonSchema = JsonSchema(
+  def emptySchema: JsonSchema = JsonSchema(
     id = None,
     ref = None,
     title = None,
