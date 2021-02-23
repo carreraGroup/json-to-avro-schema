@@ -20,7 +20,12 @@ class TranspilerSpec extends AnyFlatSpec {
       "definitions" -> ujson.Obj(
         "Element" -> ujson.Obj(
           "description" -> "a description",
-          "properties" -> ujson.Obj("id" -> ujson.Obj("type" -> "string")) //fhir ids are not strings, but #/definitions/strings which do a regex validation
+          "properties" -> ujson.Obj(
+            "id" -> ujson.Obj(
+              "type" -> "string", //fhir ids are not strings, but #/definitions/strings which do a regex validation
+              "description" -> "an id"
+            )
+          )
         )
       )
     )
@@ -32,7 +37,7 @@ class TranspilerSpec extends AnyFlatSpec {
       AvroRecord(
         "Element",
         Some("a description"),
-        Seq(AvroField("id", None, AvroString(), None, None))
+        Seq(AvroField("id", Some("an id"), AvroString(), None, None))
       )
 
     avroSchema.records.head should be(expectedRecord)

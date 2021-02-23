@@ -40,7 +40,7 @@ object Transpiler {
     schema.properties.map { case (k,v) =>
       AvroField(
         k,
-        None, //TODO: doc/desc
+        v.desc,
         resolveType(v),
         None, //TODO: default
         None  //TODO: order
