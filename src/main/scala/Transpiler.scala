@@ -28,18 +28,29 @@ object Transpiler {
    * JsonSchema -> A -> B -> C -> AvroSchema
    */
   def transpile(schema: JsonSchema, namespace: Option[String]): Either[TranspileError, AvroSchema] = {
-    val records =
-      schema.definitions.map { case (k,v) =>
-        val fields = v.properties.map { case (k,v) =>
-          val `type` = v.types.head match {
-            case "string" => AvroString()
-          }
-          AvroField(k, None, `type`, None, None)
-        }
-        AvroRecord(k, v.desc, fields.toSeq)
-      }
-    Right(AvroSchema(namespace, records.toSeq))
+    Right(AvroSchema(namespace, resolveRecords(schema).toSeq))
   }
+
+  private def resolveRecords(schema: JsonSchema) =
+    schema.definitions.map { case (k,v) =>
+      AvroRecord(k, v.desc, resolveFields(v).toSeq)
+    }
+
+  private def resolveFields(schema: JsonSchema) =
+    schema.properties.map { case (k,v) =>
+      AvroField(
+        k,
+        None, //TODO: doc/desc
+        resolveType(v),
+        None, //TODO: default
+        None  //TODO: order
+      )
+    }
+
+  private def resolveType(schema: JsonSchema) =
+    schema.types.head match {
+      case "string" => AvroString()
+    }
 }
 
 final case class TranspileError(message: String = "", cause: Throwable = None.orNull)
