@@ -1,18 +1,11 @@
 package io.carrera.jsontoavroschema
 
-sealed trait AvroType
-case class AvroString() extends AvroType
-//TODO: add types for all the primitive and complex types
-
-object AvroOrder extends Enumeration {
-  type AvroOrder = Value
-  val Ascending, Descending, Ignore = Value
-}
+import AvroType._
 import AvroOrder._
 
-case class AvroField(name: String, doc: Option[String], `type`: AvroType, default: Any, order: Option[AvroOrder]) //TODO: do something better than Any
+//TODO: do something better than Any for default
+case class AvroField(name: String, doc: Option[String], `type`: AvroType, default: Any, order: Option[AvroOrder])
 case class AvroRecord(name: String, namespace: Option[String], doc: Option[String], fields: Seq[AvroField])
-case class AvroSchema(namespace: Option[String], record: AvroRecord)
 
 object Transpiler {
   /*
@@ -37,9 +30,7 @@ object Transpiler {
     }
 
   private def resolveType(schema: JsonSchema) =
-    schema.types.head match {
-      case "string" => AvroString()
-    }
+    fromJsonSchema(schema.types.head)
 }
 
 final case class TranspileError(message: String = "", cause: Throwable = None.orNull)

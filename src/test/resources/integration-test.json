@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "http://json-schema.org/draft-06/schema#",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "optimize": {
+      "type": "boolean"
+    },
+    "alwaysNull": {
+      "type": "null"
+    },
+    "score": {
+      "type": "number"
+    },
+    "index": {
+      "type": "integer"
+    }
+  }
+}
