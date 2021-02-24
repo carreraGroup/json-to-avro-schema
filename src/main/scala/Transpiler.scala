@@ -11,30 +11,19 @@ object AvroOrder extends Enumeration {
 import AvroOrder._
 
 case class AvroField(name: String, doc: Option[String], `type`: AvroType, default: Any, order: Option[AvroOrder]) //TODO: do something better than Any
-case class AvroRecord(name: String, doc: Option[String], fields: Seq[AvroField])
-case class AvroSchema(namespace: Option[String], records: Seq[AvroRecord])
-
-object AvroWriter {
-  def toJson(schema: AvroSchema): Either[TranspileError, ujson.Obj] =
-    //TODO: implement avro schema to json conversion
-    Right(ujson.Obj())
-}
+case class AvroRecord(name: String, namespace: Option[String], doc: Option[String], fields: Seq[AvroField])
+case class AvroSchema(namespace: Option[String], record: AvroRecord)
 
 object Transpiler {
   /*
    * There could be many passes, but this signature should hide them
    * JsonSchema -> AvroSchema
    * Internally, we may do this though
-   * JsonSchema -> A -> B -> C -> AvroSchema
+   * JsonSchema -> A -> B -> C -> AvroRecord
    */
-  def transpile(schema: JsonSchema, namespace: Option[String]): Either[TranspileError, AvroSchema] = {
-    Right(AvroSchema(namespace, resolveRecords(schema).toSeq))
+  def transpile(schema: JsonSchema, namespace: Option[String]): Either[TranspileError, AvroRecord] = {
+    Right(AvroRecord("schema", namespace, schema.desc, resolveFields(schema).toSeq))
   }
-
-  private def resolveRecords(schema: JsonSchema) =
-    schema.definitions.map { case (k,v) =>
-      AvroRecord(k, v.desc, resolveFields(v).toSeq)
-    }
 
   private def resolveFields(schema: JsonSchema) =
     schema.properties.map { case (k,v) =>

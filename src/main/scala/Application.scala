@@ -20,14 +20,16 @@ object Application extends App {
         case Some(inputFilePath) =>
           val result = for {
             content <- loadFile(inputFilePath).toEither
+            _ = logSuccess("input loaded")
             inputJson = readJson(content)
             jsonSchema <- JsonSchemaParser.parse(inputJson)
+            _ = logSuccess("parsed")
             avroSchema <- Transpiler.transpile(jsonSchema.schema, getNamespace(options))
             outputJson <- AvroWriter.toJson(avroSchema)
           } yield outputJson
           result match {
             case Right(output) =>
-              logSuccess("successfully parsed")
+              logSuccess("success")
               println(ujson.write(output, indent = 2))
             case Left(err) => logError(err.toString)
           }

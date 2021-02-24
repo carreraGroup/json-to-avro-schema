@@ -4,28 +4,15 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 
 class TranspilerSpec extends AnyFlatSpec {
-  it should "take a JsonSchema and return an AvroSchema" in {
-    val expected = AvroSchema(None, Seq())
-    Transpiler.transpile(emptySchema, None) should be(Right(expected))
-  }
-
-  it should "take namespace as an argument" in {
-    val namespace = Some("com.example.foo")
-    val expected = AvroSchema(namespace, Seq())
-    Transpiler.transpile(emptySchema, namespace) should be(Right(expected))
-  }
 
   it should "create a record" in {
     val input = ujson.Obj(
-      "definitions" -> ujson.Obj(
-        "Element" -> ujson.Obj(
-          "description" -> "a description",
-          "properties" -> ujson.Obj(
-            "id" -> ujson.Obj(
-              "type" -> "string", //fhir ids are not strings, but #/definitions/strings which do a regex validation
-              "description" -> "an id"
-            )
-          )
+      "$id" -> "http://json-schema.org/draft-06/schema#",
+      "description" -> "a description",
+      "properties" -> ujson.Obj(
+        "title" -> ujson.Obj(
+          "description" -> "a title",
+          "type" -> "string",
         )
       )
     )
@@ -35,12 +22,13 @@ class TranspilerSpec extends AnyFlatSpec {
 
     val expectedRecord =
       AvroRecord(
-        "Element",
+        "schema",
+        None,
         Some("a description"),
-        Seq(AvroField("id", Some("an id"), AvroString(), None, None))
+        Seq(AvroField("title", Some("a title"), AvroString(), None, None))
       )
 
-    avroSchema.records.head should be(expectedRecord)
+    avroSchema should be(expectedRecord)
   }
 
   def emptySchema: JsonSchema = JsonSchema(

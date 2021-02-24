@@ -17,12 +17,64 @@ These versions were chosen by the specific need to convert the FHIR v4 schema.
 
 - [Install `sbt` and Scala](https://docs.scala-lang.org/getting-started/index.html)
 
+### Test
+
 ```console
 sbt test
 ```
 
+### Debug
+
+You can run the app from a `sbt` console like this.
+
+```console
+run [--namespace "com.example"] path/to/inputFile 
+```
+
+You can also do it from the command line by wrapping the command in quotes.
+
 ```console
 sbt "run [--namespace "com.example"] path/to/inputFile"
+```
+
+However, the `sbt` output also goes to stdout, so this isn't appropriate for actual generation.
+
+### Package
+
+We use the [sbt assembly plugin](https://github.com/sbt/sbt-assembly) to generate a fat jar.
+
+```console
+sbt assembly
+```
+
+Which can then be run with `java` or `scala`.
+
+```console
+$ java -jar target/scala-2.13/json-to-avro-schema-assembly-0.1.jar src/test/resources/simple-schema.json
+input loaded
+parsed
+success
+{
+  "type": "record",
+  "name": "schema",
+  "fields": [
+    {
+      "name": "title",
+      "type": "string"
+    }
+  ]
+}
+```
+
+`stdout` can be redirected to a file.
+
+```console
+$ java -jar target/scala-2.13/json-to-avro-schema-assembly-0.1.jar src/test/resources/simple-schema.json > success.avsc
+input loaded
+parsed
+success
+$ ls
+success.avsc
 ```
 
 ## Architectural considerations
