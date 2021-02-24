@@ -4,6 +4,10 @@ Converts JSON Schema Draft 6 into Avro 1.10.1
 
 These versions were chosen by the specific need to convert the FHIR v4 schema.
 
+## Quickstart
+
+See [package](#package) and [run](#running)
+
 ## Specifications
 
 - [JSON Schema Draft 6](https://tools.ietf.org/html/draft-wright-json-schema-01)
@@ -16,6 +20,9 @@ These versions were chosen by the specific need to convert the FHIR v4 schema.
 ## Developing
 
 - [Install `sbt` and Scala](https://docs.scala-lang.org/getting-started/index.html)
+
+As features are added, they should be added to [integration-test.json](./src/test/resources/integration-test.json),
+run through the tool, and compiled with `avro-tools` to verify we're generating correct AVRO schemas.
 
 ### Test
 
@@ -48,6 +55,8 @@ sbt assembly
 ```
 
 Which can then be run with `java` or `scala`.
+
+### Running
 
 ```console
 $ java -jar target/scala-2.13/json-to-avro-schema-assembly-0.1.jar src/test/resources/simple-schema.json

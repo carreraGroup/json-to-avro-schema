@@ -1,0 +1,27 @@
+{
+  "type": "record",
+  "name": "schema",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "optimize",
+      "type": "boolean"
+    },
+    {
+      "name": "score",
+      "type": "double"
+    },
+    {
+      "name": "alwaysNull",
+      "type": "null"
+    },
+    {
+      "name": "title",
+      "type": "string"
+    },
+    {
+      "name": "index",
+      "type": "long"
+    }
+  ]
+}

@@ -4,47 +4,6 @@ import io.lemonlabs.uri.Uri
 
 import scala.collection.mutable
 
-case class RootJsonSchema(schemaUri: Option[Uri], schema: JsonSchema)
-
-case class JsonSchema(
-                       id: Option[Uri],
-                       ref: Option[Uri],
-                       title: Option[String],
-                       desc: Option[String],
-                       definitions: Map[String, JsonSchema],
-                       default: Option[ujson.Value],
-                       multipleOf: Option[Double],
-                       maximum: Option[Double],
-                       exclusiveMaximum: Option[Double],
-                       minimum: Option[Double],
-                       exclusiveMinimum: Option[Double],
-                       maxLength: Option[Int],
-                       minLength: Int,
-                       pattern: Option[String],
-                       items: Seq[JsonSchema],
-                       additionalItems: Option[JsonSchema],
-                       maxItems: Option[Int],
-                       minItems: Int,
-                       uniqueItems: Boolean,
-                       contains: Option[JsonSchema],
-                       maxProperties: Option[Int],
-                       minProperties: Int,
-                       required: Seq[String],
-                       properties: Map[String, JsonSchema],
-                       patternProperties: Map[String, JsonSchema],
-                       additionalProperties: Option[JsonSchema],
-                       dependencies: Map[String, Either[Seq[String], JsonSchema]],
-                       propertyNames: Option[JsonSchema],
-                       const: Option[ujson.Value],
-                       types: Seq[String],
-                       enum: Seq[ujson.Value],
-                       format: Option[String],
-                       allOf: Seq[JsonSchema],
-                       anyOf: Seq[JsonSchema],
-                       oneOf: Seq[JsonSchema],
-                       not: Option[JsonSchema],
-                     )
-
 object JsonSchemaParser {
 
   def parse(value: ujson.Value): Either[Throwable, RootJsonSchema] =

@@ -61,4 +61,10 @@ class ApplicationSpec extends AnyFlatSpec {
     val actual = Application.readJson("""{"key": "value"}""")
     actual("key") should be(Str("value"))
   }
+
+  it should "successfully tranpsile reference schema" in {
+    val Right(avroJson) = Application.run("src/test/resources/integration-test.json", Some("com.example"))
+    val goldenCopy = Application.loadFile("src/test/resources/integration-test.avsc").get
+    ujson.read(avroJson) should be(ujson.read(ujson.read(goldenCopy)))
+  }
 }

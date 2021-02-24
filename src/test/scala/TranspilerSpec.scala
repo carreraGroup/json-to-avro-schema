@@ -1,72 +1,93 @@
 package io.carrera.jsontoavroschema
 
+import AvroType._
+import io.lemonlabs.uri.Uri
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 
 class TranspilerSpec extends AnyFlatSpec {
 
   it should "create a record" in {
-    val input = ujson.Obj(
-      "$id" -> "http://json-schema.org/draft-06/schema#",
-      "description" -> "a description",
-      "properties" -> ujson.Obj(
-        "title" -> ujson.Obj(
-          "description" -> "a title",
-          "type" -> "string",
-        )
+    val root =
+      JsonSchema.empty.copy(
+        id = schemaUri,
+        desc = Some("a description"),
+        properties = Map("title" -> JsonSchema.empty.copy(desc = Some("a title"), types = Seq("string")))
       )
-    )
-    //TODO: make creating JsonSchema easy enough that we don't need to parse it
-    val Right(root) = JsonSchemaParser.parse(input)
-    val Right(avroSchema) = Transpiler.transpile(root.schema, None)
+
+    val Right(avroSchema) = Transpiler.transpile(root, None)
 
     val expectedRecord =
       AvroRecord(
         "schema",
         None,
         Some("a description"),
-        Seq(AvroField("title", Some("a title"), AvroString(), None, None))
+        Seq(AvroField("title", Some("a title"), AvroString, None, None))
       )
 
     avroSchema should be(expectedRecord)
   }
 
-  def emptySchema: JsonSchema = JsonSchema(
-    id = None,
-    ref = None,
-    title = None,
-    desc = None,
-    definitions = Map(),
-    default = None,
-    multipleOf= None,
-    maximum= None,
-    exclusiveMaximum= None,
-    minimum= None,
-    exclusiveMinimum= None,
-    maxLength= None,
-    minLength= 0,
-    pattern= None,
-    items= Seq(),
-    additionalItems= None,
-    maxItems= None,
-    minItems= 0,
-    uniqueItems = false,
-    contains= None,
-    maxProperties= None,
-    minProperties= 0,
-    required= Seq(),
-    properties= Map(),
-    patternProperties= Map(),
-    additionalProperties= None,
-    dependencies= Map(),
-    propertyNames= None,
-    const = None,
-    types= Seq(),
-    enum = Seq(),
-    format= None,
-    allOf= Seq(),
-    anyOf= Seq(),
-    oneOf= Seq(),
-    not= None,
-  )
+  it should "include namespace in root schema" in {
+    val root = JsonSchema.empty.copy(id = schemaUri)
+    val Right(avroSchema) = Transpiler.transpile(root, Some("com.example"))
+    val expectedRecord = AvroRecord("schema", Some("com.example"), None, Seq())
+    avroSchema should be(expectedRecord)
+  }
+
+  it should "transpile numbers to doubles" in {
+    val root =
+      JsonSchema.empty.copy(
+        id = schemaUri,
+        properties = Map("maximum" -> JsonSchema.empty.copy(types = Seq("number")))
+      )
+
+    val Right(avroSchema) = Transpiler.transpile(root, None)
+
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(AvroField("maximum", None, AvroDouble, None, None)))
+    avroSchema should be(expectedRecord)
+  }
+
+  it should "transpile integers to longs" in {
+    val root =
+      JsonSchema.empty.copy(
+        id = schemaUri,
+        properties = Map("length" -> JsonSchema.empty.copy(types = Seq("integer")))
+      )
+
+    val Right(avroSchema) = Transpiler.transpile(root, None)
+
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(AvroField("length", None, AvroLong, None, None)))
+    avroSchema should be(expectedRecord)
+  }
+
+  it should "transpile booleans to booleans" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map("uniqueItems" -> JsonSchema.empty.copy(types = Seq("boolean")))
+    )
+    val Right(avroSchema) = Transpiler.transpile(root, None)
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(AvroField("uniqueItems", None, AvroBool, None, None)))
+
+    avroSchema should be(expectedRecord)
+  }
+
+  it should "transpile nulls to nulls" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map("applesauce" -> JsonSchema.empty.copy(types = Seq("null")))
+    )
+    val Right(avroSchema) = Transpiler.transpile(root, None)
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(AvroField("applesauce", None, AvroNull, None, None)))
+
+    avroSchema should be(expectedRecord)
+  }
+
+
+  private def schemaUri =
+    Uri.parseOption("http://json-schema.org/draft-06/schema#")
 }

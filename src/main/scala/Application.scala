@@ -18,16 +18,7 @@ object Application extends App {
           logError("Must specify inputFile")
           log(usage)
         case Some(inputFilePath) =>
-          val result = for {
-            content <- loadFile(inputFilePath).toEither
-            _ = logSuccess("input loaded")
-            inputJson = readJson(content)
-            jsonSchema <- JsonSchemaParser.parse(inputJson)
-            _ = logSuccess("parsed")
-            avroSchema <- Transpiler.transpile(jsonSchema.schema, getNamespace(options))
-            outputJson <- AvroWriter.toJson(avroSchema)
-          } yield outputJson
-          result match {
+          run(inputFilePath, getNamespace(options)) match {
             case Right(output) =>
               logSuccess("success")
               println(ujson.write(output, indent = 2))
@@ -35,6 +26,17 @@ object Application extends App {
           }
       }
   }
+
+  def run(inputFilePath: String, namespace: Option[String]) =
+    for {
+      content <- loadFile(inputFilePath).toEither
+      _ = logSuccess("input loaded")
+      inputJson = readJson(content)
+      jsonSchema <- JsonSchemaParser.parse(inputJson)
+      _ = logSuccess("parsed")
+      avroSchema <- Transpiler.transpile(jsonSchema.schema, namespace)
+      outputJson <- AvroWriter.toJson(avroSchema)
+    } yield outputJson
 
   def readJson(content: String) =
     ujson.read(content)
