@@ -1,3 +1,9 @@
+### our stuff ###
+# use this dir to run avro-tools on generated schema
+output
+# ignore any avro schema files that end up in our workspace
+*.avsc
+
 ### Intellij ###
 # gitignore.io has a suggested IntelliJ ignore,
 # but I'm not playing games with which directories should and shouldn't be be tracked

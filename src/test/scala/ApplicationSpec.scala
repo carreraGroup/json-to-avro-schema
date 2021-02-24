@@ -8,10 +8,42 @@ import scala.util.Success
 
 class ApplicationSpec extends AnyFlatSpec {
 
-  it should "get input file name" in {
-    val args = Array("filePath")
-    val Some(actual)  = Application.getInputFilePath(args)
-    actual should be("filePath")
+  it should "parse args for input file" in {
+    val args = List("filePath")
+    val Right(options) = Application.parseArgs(args)
+    options should be(Map("inputFile" -> "filePath"))
+  }
+
+  it should "require an inputFile" in {
+    val args = List()
+    val Left(message) = Application.parseArgs(args)
+    message should be("inputFile is required")
+  }
+
+  it should "parse optional namespace" in {
+    val args = List("--namespace", "com.example", "filePath")
+    val Right(options) = Application.parseArgs(args)
+    val expected = Map(
+      "inputFile" -> "filePath",
+      "namespace" -> "com.example"
+    )
+    options should be(expected)
+  }
+
+  it should "parse optional short flag namespace" in {
+    val args = List("-n", "com.example", "filePath")
+    val Right(options) = Application.parseArgs(args)
+    val expected = Map(
+      "inputFile" -> "filePath",
+      "namespace" -> "com.example"
+    )
+    options should be(expected)
+  }
+
+  it should "require options before args" in {
+    val args = List("filePath", "-n", "com.example")
+    val Left(message) = Application.parseArgs(args)
+    message should be("unrecognized option: filePath")
   }
 
   it should "loadFile" in {

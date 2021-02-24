@@ -333,6 +333,7 @@ object JsonSchemaParser {
   private def parseString(value: ujson.Value, elemName: String) =
     value.strOpt.toRight(ParserError(s"$elemName must be a string"))
 
+  //noinspection ScalaUnusedSymbol
   private def parseIdentity(value: ujson.Value, elemName: String) =
     Right(value).withLeft[ParserError]
 
