@@ -12,12 +12,24 @@
       "type": "double"
     },
     {
+      "name": "anyArray",
+      "type": {"type": "array", "items": "bytes"}
+    },
+    {
+      "name": "stringArray",
+      "type": {"type": "array", "items": "string"}
+    },
+    {
       "name": "alwaysNull",
       "type": "null"
     },
     {
       "name": "title",
       "type": "string"
+    },
+    {
+      "name": "emptySchema",
+      "type": "bytes"
     },
     {
       "name": "index",
