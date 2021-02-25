@@ -8,6 +8,8 @@ These versions were chosen by the specific need to convert the FHIR v4 schema.
 
 See [package](#package) and [run](#running)
 
+To understand how JSON Schema types are mapped onto AVRO types, see [Type Mapping](./docs/TypeMappings.md).
+
 ## Specifications
 
 - [JSON Schema Draft 6](https://tools.ietf.org/html/draft-wright-json-schema-01)
