@@ -1,6 +1,5 @@
 package io.carrera.jsontoavroschema
 
-import AvroType._
 import AvroOrder._
 
 //TODO: do something better than Any for default
@@ -15,22 +14,29 @@ object Transpiler {
    * JsonSchema -> A -> B -> C -> AvroRecord
    */
   def transpile(schema: JsonSchema, namespace: Option[String]): Either[TranspileError, AvroRecord] = {
-    Right(AvroRecord("schema", namespace, schema.desc, resolveFields(schema).toSeq))
+    for {
+      fields <- resolveFields(schema)
+    } yield AvroRecord("schema", namespace, schema.desc, fields)
   }
 
   private def resolveFields(schema: JsonSchema) =
-    schema.properties.map { case (k,v) =>
-      AvroField(
-        k,
-        v.desc,
-        resolveType(v),
-        None, //TODO: default
-        None  //TODO: order
-      )
+    schema.properties.foldLeft(Right(Seq[AvroField]()).withLeft[TranspileError]) { case (acc, (k,v)) =>
+      for {
+        last <- acc
+        t <- resolveType(v)
+        field =
+          AvroField(k, v.desc, t,
+            None, //TODO: default
+            None  //TODO: order
+          )
+      } yield last :+ field
     }
 
   private def resolveType(schema: JsonSchema) =
-    fromJsonSchema(schema.types.head)
+    AvroType
+      .fromJsonSchema(schema.types, schema.items)
+      .left
+      .map(msg => TranspileError(msg))
 }
 
 final case class TranspileError(message: String = "", cause: Throwable = None.orNull)

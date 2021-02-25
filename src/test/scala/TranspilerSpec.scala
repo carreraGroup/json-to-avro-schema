@@ -1,6 +1,7 @@
 package io.carrera.jsontoavroschema
 
 import AvroType._
+
 import io.lemonlabs.uri.Uri
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
@@ -87,6 +88,81 @@ class TranspilerSpec extends AnyFlatSpec {
     avroSchema should be(expectedRecord)
   }
 
+  it should "transpile empty schema to bytes" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map("const" -> JsonSchema.empty)
+    )
+    val Right(avroSchema) = Transpiler.transpile(root, None)
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(AvroField("const", None, AvroBytes, None, None)))
+
+    avroSchema should be(expectedRecord)
+  }
+
+  it should "transpile arrays with types" in {
+    /*
+     "stringArray": {
+       "type": "array",
+       "items": { "type": "string" }
+     }
+     */
+
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map("someList" ->
+        JsonSchema.empty.copy(
+          types = Seq("array"),
+          items = Seq(JsonSchema.empty.copy(types = Seq("string")))
+        )
+      )
+    )
+    val Right(avroSchema) = Transpiler.transpile(root, None)
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(AvroField("someList", None, AvroArray(AvroString), None, None)))
+
+    avroSchema should be(expectedRecord)
+  }
+
+  it should "transpile arrays of any (empty schema) to arrays of bytes" in {
+    /*
+      "examples": {
+        "type": "array",
+        "items": {}
+      },
+     */
+
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map("examples" ->
+        JsonSchema.empty.copy(
+          types = Seq("array"),
+          items = Seq(JsonSchema.empty)
+        )
+      )
+    )
+    val Right(avroSchema) = Transpiler.transpile(root, None)
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(AvroField("examples", None, AvroArray(AvroBytes), None, None)))
+
+    avroSchema should be(expectedRecord)
+  }
+
+  it should "transpile arrays of any to arrays of bytes" in {
+    /*
+      "someList: {
+        "type": "array"
+       }
+     */
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map("someList" -> JsonSchema.empty.copy(types = Seq("array")))
+    )
+    val Right(avroSchema) = Transpiler.transpile(root, None)
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(AvroField("someList", None, AvroArray(AvroBytes), None, None)))
+    avroSchema should be(expectedRecord)
+  }
 
   private def schemaUri =
     Uri.parseOption("http://json-schema.org/draft-06/schema#")

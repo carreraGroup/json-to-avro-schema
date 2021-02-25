@@ -16,6 +16,14 @@
     },
     "index": {
       "type": "integer"
-    }
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "anyArray": {
+      "type": "array"
+    },
+    "emptySchema": {}
   }
 }

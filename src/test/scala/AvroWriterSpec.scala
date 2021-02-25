@@ -3,8 +3,6 @@ package io.carrera.jsontoavroschema
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 
-import AvroType._
-
 class AvroWriterSpec extends AnyFlatSpec {
   it should "create json object" in {
     val schema =
@@ -51,6 +49,30 @@ class AvroWriterSpec extends AnyFlatSpec {
           "name" -> "id",
           "doc" -> "an id",
           "type" -> "string",
+        )
+      ),
+    )
+
+    val Right(records) = AvroWriter.toJson(schema)
+    records should be(expected)
+  }
+
+  it should "write item type if array" in {
+    val schema =
+      AvroRecord("Element", None, None,
+        Seq(AvroField("stringArray", None, AvroArray(AvroString), None, None))
+      )
+
+    val expected = ujson.Obj(
+      "type" -> "record",
+      "name" -> "Element",
+      "fields" -> ujson.Arr(
+        ujson.Obj(
+          "name" -> "stringArray",
+          "type" -> ujson.Obj(
+            "type" -> "array",
+            "items" -> "string"
+          )
         )
       ),
     )
