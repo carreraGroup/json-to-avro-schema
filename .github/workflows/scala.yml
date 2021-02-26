@@ -5,7 +5,7 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-
+    
 jobs:
   build:
 
@@ -17,5 +17,7 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
-    - name: Run tests
-      run: sbt test
+    - name: Build Test and Package
+      run: sbt assembly
+    - name: Run Integration Tests
+      run: ./integrationTest.sh
