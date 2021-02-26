@@ -12,7 +12,8 @@
 | string  | string        |                                                                                  |
 | any     | bytes         | JSON schema allows for "any" types indicated by an empty schema or missing field |
 | array   | array*        | *avro complex type, requires knowing the item type                               |
-| object* | ???           | could be a record or map depending on use                                        |
+| object* | record        | if an `$id` is present                                                           |
+| object* | map           | if an `$id` is not present                                                       |
 | enum*   | ???           | JSchema allows enum values to be `any`, but AVRO expects a list of strings       |
 
 <!-- References -->

@@ -1,10 +1,7 @@
 package io.carrera.jsontoavroschema
 
-import AvroOrder._
-
-//TODO: do something better than Any for default
-case class AvroField(name: String, doc: Option[String], `type`: AvroType, default: Any, order: Option[AvroOrder])
-case class AvroRecord(name: String, namespace: Option[String], doc: Option[String], fields: Seq[AvroField])
+import io.carrera.jsontoavroschema
+import io.lemonlabs.uri.Uri
 
 object Transpiler {
   /*
@@ -16,27 +13,64 @@ object Transpiler {
   def transpile(schema: JsonSchema, namespace: Option[String]): Either[TranspileError, AvroRecord] = {
     for {
       fields <- resolveFields(schema)
-    } yield AvroRecord("schema", namespace, schema.desc, fields)
+      name = schema.id.map(toName).getOrElse("unknown")
+    } yield AvroRecord(name, namespace, schema.desc, fields)
   }
 
+  private def toName(id: Uri) =
+    id.path.parts.last
+
   private def resolveFields(schema: JsonSchema) =
-    schema.properties.foldLeft(Right(Seq[AvroField]()).withLeft[TranspileError]) { case (acc, (k,v)) =>
+    schema.properties.foldLeft(Right(Seq[AvroField]()).withLeft[TranspileError]) { case (acc, (k, v)) =>
       for {
         last <- acc
         t <- resolveType(v)
         field =
-          AvroField(k, v.desc, t,
-            None, //TODO: default
-            None  //TODO: order
-          )
+        AvroField(k, v.desc, t,
+          None, //TODO: default
+          None //TODO: order
+        )
       } yield last :+ field
     }
 
-  private def resolveType(schema: JsonSchema) =
-    AvroType
-      .fromJsonSchema(schema.types, schema.items)
-      .left
-      .map(msg => TranspileError(msg))
+  private def resolveType(schema: JsonSchema): Either[TranspileError, AvroType] = {
+    schema.types match {
+      case Nil => Right(AvroBytes)
+      case value :: Nil =>
+        value match {
+          case "string" => Right(AvroString)
+          case "number" => Right(AvroDouble)
+          case "boolean" => Right(AvroBool)
+          case "null" => Right(AvroNull)
+          case "integer" => Right(AvroLong)
+          case "array" =>
+            schema.items match {
+              case Nil => Right(AvroArray(AvroBytes))
+              case x :: Nil =>
+                for {
+                  itemType <- resolveType(x)
+                } yield AvroArray(itemType)
+              case x :: xs => Left(TranspileError("Unimplemented: array items must have a single type"))
+            }
+          case "object" =>
+            schema.id match {
+              //how might we simply call transpile and be done?
+              case Some(_) => transpile(schema, None)
+              case None =>
+                //TODO: additional props only apply to props not present in properties
+                // they're accumulative, not exclusive
+                schema.additionalProperties match {
+                  case None => Left(TranspileError(s"object without a type"))
+                  case Some(additionalProps) => for {
+                    valueType <- resolveType(additionalProps)
+                  } yield AvroMap(valueType)
+                }
+            }
+          case _ => Left(TranspileError(s"Unexpected JSON type: $value"))
+        }
+      case x :: xs => Left(TranspileError("Unimplemented: unions aren't supported yet"))
+    }
+  }
 }
 
 final case class TranspileError(message: String = "", cause: Throwable = None.orNull)

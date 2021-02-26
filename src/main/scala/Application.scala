@@ -35,7 +35,7 @@ object Application extends App {
       jsonSchema <- JsonSchemaParser.parse(inputJson)
       _ = logSuccess("parsed")
       avroSchema <- Transpiler.transpile(jsonSchema.schema, namespace)
-      outputJson <- AvroWriter.toJson(avroSchema)
+      outputJson = AvroWriter.toJson(avroSchema)
     } yield outputJson
 
   def readJson(content: String) =

@@ -24,6 +24,17 @@
     "anyArray": {
       "type": "array"
     },
-    "emptySchema": {}
+    "emptySchema": {},
+    "stringMap": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "nested": {
+      "$id": "Nested",
+      "type": "object",
+      "properties": {
+        "innerProp": {"type": "integer"}
+      }
+    }
   }
 }

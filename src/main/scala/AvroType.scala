@@ -1,5 +1,7 @@
 package io.carrera.jsontoavroschema
 
+import AvroOrder.AvroOrder
+
 sealed trait AvroType {
   def serialize(): String =
     this match {
@@ -9,39 +11,10 @@ sealed trait AvroType {
       case AvroBool => "boolean"
       case AvroLong => "long"
       case AvroBytes => "bytes"
-      case AvroArray(_) => "array"
+      case _: AvroArray => "array"
+      case _: AvroMap => "map"
+      case _: AvroRecord => "record"
     }
-}
-
-object AvroType {
-  //TODO: jsonschema parser should encode these as types
-  def fromJsonSchema(types: Seq[String], items: Seq[JsonSchema]): Either[String, AvroType] = {
-    types match {
-      case Nil => Right(AvroBytes)
-      case value::Nil =>
-        value match {
-          case "string" => Right(AvroString)
-          case "number" => Right(AvroDouble)
-          case "boolean" => Right(AvroBool)
-          case "null" => Right(AvroNull)
-          case "integer" => Right(AvroLong)
-          case "array" =>
-            items match {
-              case Nil =>
-                for {
-                  itemType <- fromJsonSchema(Seq(), Seq())
-                } yield AvroArray(itemType)
-              case x::Nil =>
-                for {
-                  itemType <- fromJsonSchema(x.types, x.items)
-                } yield AvroArray(itemType)
-              case x::xs => Left("Unimplemented: array items must have a single type")
-            }
-          case _ => Left(s"Unexpected JSON type: $value")
-        }
-      case x::xs => Left("Unimplemented: unions aren't supported yet")
-    }
-  }
 }
 
 case object AvroString extends AvroType
@@ -51,3 +24,8 @@ case object AvroNull extends AvroType
 case object AvroLong extends AvroType
 case object AvroBytes extends AvroType
 case class AvroArray(items: AvroType) extends AvroType
+case class AvroMap(values: AvroType) extends AvroType
+
+//TODO: do something better than Any for default
+case class AvroField(name: String, doc: Option[String], `type`: AvroType, default: Any, order: Option[AvroOrder])
+case class AvroRecord(name: String, namespace: Option[String], doc: Option[String], fields: Seq[AvroField]) extends AvroType

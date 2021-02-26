@@ -1,7 +1,5 @@
 package io.carrera.jsontoavroschema
 
-import AvroType._
-
 import io.lemonlabs.uri.Uri
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
@@ -161,6 +159,51 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(root, None)
     val expectedRecord =
       AvroRecord("schema", None, None, Seq(AvroField("someList", None, AvroArray(AvroBytes), None, None)))
+    avroSchema should be(expectedRecord)
+  }
+
+  it should "transpile objects to map when properties is not present" in {
+    /*
+      "someObj": {
+        "type": "object"
+        "additionalProperties": { "type": "string" }
+       }
+     */
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map("someObj" -> JsonSchema.empty.copy(
+        types = Seq("object"),
+        additionalProperties = Some(JsonSchema.empty.copy(types = Seq("string")))
+      ))
+    )
+    val Right(avroSchema) = Transpiler.transpile(root, None)
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(AvroField("someObj", None, AvroMap(AvroString), None, None)))
+    avroSchema should be(expectedRecord)
+  }
+
+  it should "transpile objects to records when an properties is present" in {
+    /*
+     "someObj": {
+       "$id": "SomeObj",
+       "type: "object",
+       "properties": {
+          "Inner": { "type": "integer" }
+       }
+     }
+     */
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map("someObj" -> JsonSchema.empty.copy(
+        id = Uri.parseOption("SomeObj"),
+        types = Seq("object"),
+        properties = Map("Inner" -> JsonSchema.empty.copy(types = Seq("integer")))
+      ))
+    )
+    val Right(avroSchema) = Transpiler.transpile(root, None)
+    val innerRecord = AvroRecord("SomeObj", None, None, Seq(AvroField("Inner", None, AvroLong, None, None)))
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(AvroField("someObj", None, innerRecord, None, None)))
     avroSchema should be(expectedRecord)
   }
 

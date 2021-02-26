@@ -12,16 +12,22 @@
       "type": "double"
     },
     {
-      "name": "anyArray",
-      "type": {"type": "array", "items": "bytes"}
-    },
-    {
       "name": "stringArray",
       "type": {"type": "array", "items": "string"}
     },
     {
       "name": "alwaysNull",
       "type": "null"
+    },
+    {
+      "name": "nested",
+      "type": {
+        "type": "record",
+        "name": "Nested",
+        "fields": [
+          { "name": "innerProp", "type": "long"}
+        ]
+      }
     },
     {
       "name": "title",
@@ -34,6 +40,14 @@
     {
       "name": "index",
       "type": "long"
+    },
+    {
+      "name": "stringMap",
+      "type": {"type":  "map", "values": "string"}
+    },
+    {
+      "name": "anyArray",
+      "type": {"type": "array", "items": "bytes"}
     }
   ]
 }

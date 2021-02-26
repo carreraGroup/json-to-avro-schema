@@ -26,7 +26,7 @@ class AvroWriterSpec extends AnyFlatSpec {
       ),
     )
 
-    val Right(records) = AvroWriter.toJson(schema)
+    val records = AvroWriter.toJson(schema)
     records should be(expected)
   }
 
@@ -53,7 +53,7 @@ class AvroWriterSpec extends AnyFlatSpec {
       ),
     )
 
-    val Right(records) = AvroWriter.toJson(schema)
+    val records = AvroWriter.toJson(schema)
     records should be(expected)
   }
 
@@ -77,7 +77,68 @@ class AvroWriterSpec extends AnyFlatSpec {
       ),
     )
 
-    val Right(records) = AvroWriter.toJson(schema)
+    val records = AvroWriter.toJson(schema)
+    records should be(expected)
+  }
+
+  it should "write value type if map" in {
+    val schema =
+      AvroRecord("Record", None, None,
+        Seq(AvroField("boolMap", None, AvroMap(AvroBool), None, None))
+      )
+
+    val expected = ujson.Obj(
+      "type" -> "record",
+      "name" -> "Record",
+      "fields" -> ujson.Arr(
+        ujson.Obj(
+          "name" -> "boolMap",
+          "type" -> ujson.Obj(
+            "type" -> "map",
+            "values" -> "boolean"
+          )
+        )
+      ),
+    )
+
+    val records = AvroWriter.toJson(schema)
+    records should be(expected)
+  }
+
+  it should "write nested records" in {
+    val schema = {
+      AvroRecord("Record", None, None,
+        Seq(AvroField(
+          "someObj",
+          None,
+          AvroRecord("SomeObj", None, None, Seq(AvroField("Inner", None, AvroLong, None, None))),
+          None,
+          None
+        ))
+      )
+    }
+    val expected =
+      ujson.Obj(
+        "type" -> "record",
+        "name" -> "Record",
+        "fields" -> ujson.Arr(
+          ujson.Obj(
+            "name" -> "someObj",
+            "type" -> ujson.Obj(
+              "type" -> "record",
+              "name" -> "SomeObj",
+              "fields" -> ujson.Arr(
+                ujson.Obj(
+                  "name" -> "Inner",
+                  "type" -> "long"
+                )
+              )
+            )
+          )
+        )
+      )
+
+    val records = AvroWriter.toJson(schema)
     records should be(expected)
   }
 }
