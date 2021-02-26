@@ -1,6 +1,5 @@
 package io.carrera.jsontoavroschema
 
-import io.carrera.jsontoavroschema
 import io.lemonlabs.uri.Uri
 
 object Transpiler {
@@ -38,12 +37,12 @@ object Transpiler {
       case Nil => Right(AvroBytes)
       case value :: Nil =>
         value match {
-          case "string" => Right(AvroString)
-          case "number" => Right(AvroDouble)
-          case "boolean" => Right(AvroBool)
-          case "null" => Right(AvroNull)
-          case "integer" => Right(AvroLong)
-          case "array" =>
+          case JsonSchemaString => Right(AvroString)
+          case JsonSchemaNumber => Right(AvroDouble)
+          case JsonSchemaBool => Right(AvroBool)
+          case JsonSchemaNull => Right(AvroNull)
+          case JsonSchemaInteger => Right(AvroLong)
+          case JsonSchemaArray =>
             schema.items match {
               case Nil => Right(AvroArray(AvroBytes))
               case x :: Nil =>
@@ -52,7 +51,7 @@ object Transpiler {
                 } yield AvroArray(itemType)
               case x :: xs => Left(TranspileError("Unimplemented: array items must have a single type"))
             }
-          case "object" =>
+          case JsonSchemaObject =>
             schema.id match {
               //how might we simply call transpile and be done?
               case Some(_) => transpile(schema, None)
@@ -66,7 +65,6 @@ object Transpiler {
                   } yield AvroMap(valueType)
                 }
             }
-          case _ => Left(TranspileError(s"Unexpected JSON type: $value"))
         }
       case x :: xs => Left(TranspileError("Unimplemented: unions aren't supported yet"))
     }

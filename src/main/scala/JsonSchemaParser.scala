@@ -155,14 +155,39 @@ object JsonSchemaParser {
     val parser = (node: ujson.Value) => {
       for {
         types <- node match {
-          case ujson.Str(s) => Right(Seq(s))
-          case ujson.Arr(a) => parseStringArray(a, elemName)
+          case ujson.Str(s) =>
+            for {
+              t <- toType(s)
+            } yield Seq(t)
+          case ujson.Arr(a) =>
+            for {
+              strings <- parseStringArray(a, elemName)
+              types <- strings.foldLeft(Right(Seq[JsonSchemaType]()).withLeft[ParserError]) {
+                case (acc, cur) =>
+                  for {
+                   last <- acc
+                   t <- toType(cur)
+                  } yield last :+ t
+              }
+            } yield types
           case _ => Left(ParserError(s"$elemName must be a string or array"))
         }
       } yield types
     }
     runSeqParser(obj, elemName, parser)
   }
+
+  private def toType(str: String) =
+    str match {
+      case "null" => Right(JsonSchemaNull)
+      case "boolean" => Right(JsonSchemaBool)
+      case "integer" => Right(JsonSchemaInteger)
+      case "number" => Right(JsonSchemaNumber)
+      case "string" => Right(JsonSchemaString)
+      case "array" => Right(JsonSchemaArray)
+      case "object" => Right(JsonSchemaObject)
+      case unknown => Left(ParserError(s"Invalid type: $unknown"))
+    }
 
   private def parseStringArray(items: IterableOnce[ujson.Value], elemName: String) = {
     for {

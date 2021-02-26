@@ -2,6 +2,16 @@ package io.carrera.jsontoavroschema
 
 import io.lemonlabs.uri.Uri
 
+sealed trait JsonSchemaType
+
+case object JsonSchemaNull extends JsonSchemaType
+case object JsonSchemaBool extends JsonSchemaType
+case object JsonSchemaInteger extends JsonSchemaType
+case object JsonSchemaNumber extends JsonSchemaType
+case object JsonSchemaString extends JsonSchemaType
+case object JsonSchemaArray extends JsonSchemaType
+case object JsonSchemaObject extends JsonSchemaType
+
 case class RootJsonSchema(schemaUri: Option[Uri], schema: JsonSchema)
 
 case class JsonSchema(
@@ -34,7 +44,7 @@ case class JsonSchema(
                        dependencies: Map[String, Either[Seq[String], JsonSchema]],
                        propertyNames: Option[JsonSchema],
                        const: Option[ujson.Value],
-                       types: Seq[String],
+                       types: Seq[JsonSchemaType],
                        enum: Seq[ujson.Value],
                        format: Option[String],
                        allOf: Seq[JsonSchema],

@@ -461,15 +461,15 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
   it should "parse string type" in {
     val input = ujson.Obj("type" -> ujson.Str("string"))
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.types should be(Seq("string"))
+    root.schema.types should be(Seq(JsonSchemaString))
   }
 
   it should "parse array type" in {
     val input = ujson.Obj(
-      "type" -> ujson.Arr("string", "bool")
+      "type" -> ujson.Arr("string", "boolean")
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.types should be(Seq("string", "bool"))
+    root.schema.types should be(Seq(JsonSchemaString, JsonSchemaBool))
   }
 
   it should "parse enum" in {
