@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "http://example.org/Bool",
+  "properties": {
+    "optimize": {
+      "type": "boolean"
+    }
+  }
+}

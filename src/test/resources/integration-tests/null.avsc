@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "Null",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "alwaysNull",
+      "type": "null"
+    }
+  ]
+}

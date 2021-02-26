@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "AnyArray",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "anyArray",
+      "type": {"type": "array", "items": "bytes"}
+    }
+  ]
+}

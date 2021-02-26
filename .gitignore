@@ -3,6 +3,8 @@
 output
 # ignore any avro schema files that end up in our workspace
 *.avsc
+# unless it's test data
+!src/test/resources/**/*.avsc
 
 ### Intellij ###
 # gitignore.io has a suggested IntelliJ ignore,

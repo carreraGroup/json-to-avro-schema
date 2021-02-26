@@ -10,7 +10,7 @@ See [packaging](#packaging) and [run](#running)
 
 To understand how JSON Schema types are mapped onto AVRO types, see [Type Mapping][type-mapping].
 
-To see the current impelementation status, see the [Roadmap][roadmap].
+To see the current implementation status, see the [Roadmap][roadmap].
 
 ## Specifications
 
@@ -25,8 +25,14 @@ To see the current impelementation status, see the [Roadmap][roadmap].
 
 - [Install `sbt` and Scala][install-scala]
 
-As features are added, they should be added to [integration-test.json][integration-test],
-run through the tool, and compiled with `avro-tools` to verify we're generating correct AVRO schemas.  
+As features are added, they should be added to the [integration-test][integration-test-dir] directory,
+the [integration-test][integration-test], run through the tool, 
+and compiled with `avro-tools` to verify we're generating correct AVRO schemas.  
+
+```console
+avro-tools compile schema src/test/resources/integration-tests/*.avsc output/
+```
+
 The [keyword matrix][roadmap] should also be updated.
 
 ### Test
@@ -108,7 +114,8 @@ We should do our best to allow for this to be easily implemented later.
 <!-- References -->
 [roadmap]: ./docs/Roadmap.md
 [type-mapping]: ./docs/TypeMappings.md
-[integration-test]: ./src/test/resources/integration-test.json
+[integration-test-dir]: ./src/test/resources/integration-tests
+[integration-test]: ./src/test/scala/IntegrationTests.scala
 
 [json-schema-spec]: https://tools.ietf.org/html/draft-wright-json-schema-01
 [json-schema-validation-spec]: https://tools.ietf.org/html/draft-wright-json-schema-validation-01

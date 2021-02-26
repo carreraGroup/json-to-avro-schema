@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "Integer",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "index",
+      "type": "long"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "http://example.org/StringMap",
+  "properties": {
+    "stringMap": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    }
+  }
+}

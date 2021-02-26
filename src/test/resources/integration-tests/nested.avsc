@@ -1,0 +1,20 @@
+{
+  "type": "record",
+  "name": "Nested",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "nested",
+      "type": {
+        "type": "record",
+        "name": "Inner",
+        "fields": [
+          {
+            "name": "innerProp",
+            "type": "long"
+          }
+        ]
+      }
+    }
+  ]
+}

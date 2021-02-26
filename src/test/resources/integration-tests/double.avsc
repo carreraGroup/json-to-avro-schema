@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "Double",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "score",
+      "type": "double"
+    }
+  ]
+}

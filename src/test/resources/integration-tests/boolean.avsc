@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "Bool",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "optimize",
+      "type": "boolean"
+    }
+  ]
+}

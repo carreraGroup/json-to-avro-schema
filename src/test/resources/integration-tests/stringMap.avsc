@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "StringMap",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "stringMap",
+      "type": {"type":  "map", "values": "string"}
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "StringArray",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "stringArray",
+      "type": {"type": "array", "items": "string"}
+    }
+  ]
+}
