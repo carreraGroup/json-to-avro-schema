@@ -5,5 +5,8 @@
     "optimize": {
       "type": "boolean"
     }
-  }
+  },
+  "required": [
+    "optimize"
+  ]
 }

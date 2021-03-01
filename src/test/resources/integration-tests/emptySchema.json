@@ -3,5 +3,8 @@
   "$id": "http://example.org/Empty",
   "properties": {
     "emptySchema": {}
-  }
+  },
+  "required": [
+    "emptySchema"
+  ]
 }

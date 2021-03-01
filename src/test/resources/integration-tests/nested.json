@@ -7,7 +7,9 @@
       "type": "object",
       "properties": {
         "innerProp": {"type": "integer"}
-      }
+      },
+      "required": ["innerProp"]
     }
-  }
+  },
+  "required": ["nested"]
 }

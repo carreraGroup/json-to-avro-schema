@@ -5,5 +5,8 @@
     "score": {
       "type": "number"
     }
-  }
+  },
+  "required": [
+    "score"
+  ]
 }

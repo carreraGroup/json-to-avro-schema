@@ -5,5 +5,8 @@
     "alwaysNull": {
       "type": "null"
     }
-  }
+  },
+  "required": [
+    "alwaysNull"
+  ]
 }

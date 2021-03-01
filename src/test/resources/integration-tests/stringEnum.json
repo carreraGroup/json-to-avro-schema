@@ -8,5 +8,6 @@
           "b"
       ]
     }
-  }
+  },
+  "required": ["someProp"]
 }
