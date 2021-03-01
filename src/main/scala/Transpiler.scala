@@ -34,13 +34,12 @@ object Transpiler {
 
   private def resolveType(propName: String, schema: JsonSchema): Either[TranspileError, AvroType] = {
     schema.types match {
-      case Nil => {
+      case Nil =>
         /* types and enum aren't really mutually exclusive, but having both makes no sense in avro */
         schema.`enum` match {
           case Nil => Right(AvroBytes)
-          case xs => resolveEnum(propName, schema.`enum`)
+          case xs => resolveEnum(propName, xs)
         }
-      }
       case value :: Nil =>
         value match {
           case JsonSchemaString => Right(AvroString)
