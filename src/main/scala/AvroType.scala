@@ -15,6 +15,5 @@ case class AvroMap(values: AvroType) extends AvroType
 
 case class AvroEnum(name: String, symbols: Seq[String]) extends AvroType
 case class AvroUnion(types: Seq[AvroType]) extends AvroType
-//TODO: do something better than Any for default
-case class AvroField(name: String, doc: Option[String], `type`: AvroType, default: Any, order: Option[AvroOrder])
+case class AvroField(name: String, doc: Option[String], `type`: AvroType, default: Option[ujson.Value], order: Option[AvroOrder])
 case class AvroRecord(name: String, namespace: Option[String], doc: Option[String], fields: Seq[AvroField]) extends AvroType
