@@ -3,10 +3,10 @@ echo "creating output directory"
 mkdir -p output
 for f in src/test/resources/integration-tests/*.json; do
     input_name=$(basename $f)
-    output_name=${input_name%.json}
+    output_name=${input_name%.json}.avsc
     echo
     echo "converting $input_name to $output_name"
-    java -jar target/scala-2.13/json-to-avro-schema-assembly-0.1.jar $f > output/$output_name.avsc
+    java -jar target/scala-2.13/json-to-avro-schema-assembly-0.1.jar $f > output/$output_name
 done
 
 if [ ! -f avro-tools-1.10.1.jar ]; then
