@@ -23,7 +23,7 @@ object Transpiler {
     schema.properties.foldLeft(Right(Seq[AvroField]()).withLeft[TranspileError]) { case (acc, (k, v)) =>
       for {
         last <- acc
-        t <- resolveType(v)
+        t <- resolveType(k, v)
         field =
         AvroField(k, v.desc, t,
           None, //TODO: default
@@ -32,9 +32,15 @@ object Transpiler {
       } yield last :+ field
     }
 
-  private def resolveType(schema: JsonSchema): Either[TranspileError, AvroType] = {
+  private def resolveType(propName: String, schema: JsonSchema): Either[TranspileError, AvroType] = {
     schema.types match {
-      case Nil => Right(AvroBytes)
+      case Nil => {
+        /* types and enum aren't really mutually exclusive, but having both makes no sense in avro */
+        schema.`enum` match {
+          case Nil => Right(AvroBytes)
+          case xs => resolveEnum(propName, schema.`enum`)
+        }
+      }
       case value :: Nil =>
         value match {
           case JsonSchemaString => Right(AvroString)
@@ -47,9 +53,9 @@ object Transpiler {
               case Nil => Right(AvroArray(AvroBytes))
               case x :: Nil =>
                 for {
-                  itemType <- resolveType(x)
+                  itemType <- resolveType(propName, x)
                 } yield AvroArray(itemType)
-              case x :: xs => Left(TranspileError("Unimplemented: array items must have a single type"))
+              case x :: xs => Left(TranspileError(s"Unimplemented: index by index array validation isn't supported yet at $propName"))
             }
           case JsonSchemaObject =>
             schema.id match {
@@ -59,16 +65,28 @@ object Transpiler {
                 //TODO: additional props only apply to props not present in properties
                 // they're accumulative, not exclusive
                 schema.additionalProperties match {
-                  case None => Left(TranspileError(s"object without a type"))
+                  case None => Left(TranspileError(s"object without a type at $propName"))
                   case Some(additionalProps) => for {
-                    valueType <- resolveType(additionalProps)
+                    valueType <- resolveType(propName, additionalProps)
                   } yield AvroMap(valueType)
                 }
             }
         }
-      case x :: xs => Left(TranspileError("Unimplemented: unions aren't supported yet"))
+      case x :: xs => Left(TranspileError(s"Unimplemented: unions aren't supported yet at $propName.}"))
     }
   }
+
+  private def resolveEnum(propName: String, value: Seq[ujson.Value]): Either[TranspileError, AvroEnum] =
+    value.foldLeft(Right(Seq[String]()).withLeft[TranspileError]) { case (acc, cur) =>
+      for {
+        last <- acc
+        str <- cur match {
+          case ujson.Str(s) => Right(s)
+          case v => Left(TranspileError(s"Unimplemented: non-string enums aren't supported yet at $propName. Value: $v"))
+        }
+      } yield last :+ str
+    } /* json schema enums don't have names, so we build one from it's parent property */
+      .map(values => AvroEnum(s"${propName}Enum", values))
 }
 
 final case class TranspileError(message: String = "", cause: Throwable = None.orNull)

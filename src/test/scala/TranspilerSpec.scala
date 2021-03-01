@@ -207,6 +207,40 @@ class TranspilerSpec extends AnyFlatSpec {
     avroSchema should be(expectedRecord)
   }
 
+  it should "transpile string enums" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map("someProp" -> JsonSchema.empty.copy(
+          `enum` = Seq(ujson.Str("a"), ujson.Str("b"))
+        )
+      )
+    )
+    val Right(avro) = Transpiler.transpile(root, None)
+
+    val expectedRecord =
+      AvroRecord("schema", None, None,
+        Seq(AvroField("someProp", None, AvroEnum("somePropEnum", Seq("a","b")), None, None))
+      )
+
+    avro should be(expectedRecord)
+  }
+
+  it should "fail if json enum values are not strings" in {
+    /*
+     * We should really find a different avro type to transpile to instead.
+     * See issue: https://github.com/carreragroup/json-to-avro-schema/issues/22
+     */
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map("someProp" -> JsonSchema.empty.copy(
+        `enum` = Seq(ujson.Str("a"), ujson.Bool(false))
+        )
+      )
+    )
+    val Left(err) = Transpiler.transpile(root, None)
+    err.message should be("Unimplemented: non-string enums aren't supported yet at someProp. Value: false")
+  }
+
   private def schemaUri =
     Uri.parseOption("http://json-schema.org/draft-06/schema#")
 }

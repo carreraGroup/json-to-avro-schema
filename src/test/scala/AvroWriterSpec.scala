@@ -141,4 +141,29 @@ class AvroWriterSpec extends AnyFlatSpec {
     val records = AvroWriter.toJson(schema)
     records should be(expected)
   }
+
+  it should "write enums" in {
+    val schema =
+      AvroRecord("Record", None, None,
+        Seq(AvroField("someProp", None, AvroEnum("somePropEnum", Seq("a","b")), None, None))
+      )
+
+    val expected = ujson.Obj(
+      "type" -> "record",
+      "name" -> "Record",
+      "fields" -> ujson.Arr(
+        ujson.Obj(
+          "name" -> "someProp",
+          "type" -> ujson.Obj(
+            "type" -> "enum",
+            "name" -> "somePropEnum",
+            "symbols" -> ujson.Arr("a", "b")
+          )
+        )
+      ),
+    )
+    val records = AvroWriter.toJson(schema)
+    records should be(expected)
+  }
+
 }
