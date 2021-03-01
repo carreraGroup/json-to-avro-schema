@@ -28,6 +28,8 @@ object AvroWriter {
         ujson.Obj("type" -> c.serialize(), "items" -> t.serialize())
       case m @ AvroMap(t) =>
         ujson.Obj("type" -> m.serialize(), "values" -> t.serialize())
+      case e @ AvroEnum(name, symbols) =>
+        ujson.Obj("type" -> e.serialize(), "name" -> name, "symbols" -> symbols)
       case r: AvroRecord => toJson(r)
       case t => ujson.Str(t.serialize())
     }

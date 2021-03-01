@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "StringEnum",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "someProp",
+      "type": {
+        "type": "enum",
+        "name": "somePropEnum",
+        "symbols": ["a", "b"]
+      }
+    }
+  ]
+}
