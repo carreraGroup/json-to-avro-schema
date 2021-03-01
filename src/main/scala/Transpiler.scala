@@ -40,40 +40,47 @@ object Transpiler {
           case Nil => Right(AvroBytes)
           case xs => resolveEnum(propName, xs)
         }
-      case value :: Nil =>
-        value match {
-          case JsonSchemaString => Right(AvroString)
-          case JsonSchemaNumber => Right(AvroDouble)
-          case JsonSchemaBool => Right(AvroBool)
-          case JsonSchemaNull => Right(AvroNull)
-          case JsonSchemaInteger => Right(AvroLong)
-          case JsonSchemaArray =>
-            schema.items match {
-              case Nil => Right(AvroArray(AvroBytes))
-              case x :: Nil =>
-                for {
-                  itemType <- resolveType(propName, x)
-                } yield AvroArray(itemType)
-              case x :: xs => Left(TranspileError(s"Unimplemented: index by index array validation isn't supported yet at $propName"))
-            }
-          case JsonSchemaObject =>
-            schema.id match {
-              //how might we simply call transpile and be done?
-              case Some(_) => transpile(schema, None)
-              case None =>
-                //TODO: additional props only apply to props not present in properties
-                // they're accumulative, not exclusive
-                schema.additionalProperties match {
-                  case None => Left(TranspileError(s"object without a type at $propName"))
-                  case Some(additionalProps) => for {
-                    valueType <- resolveType(propName, additionalProps)
-                  } yield AvroMap(valueType)
-                }
-            }
-        }
-      case x :: xs => Left(TranspileError(s"Unimplemented: unions aren't supported yet at $propName.}"))
+      case x :: Nil => resolveType(propName, schema, x)
+      case xs => xs.foldLeft(Right(Seq[AvroType]()).withLeft[TranspileError]) { case (acc, cur) =>
+        for {
+          last <- acc
+          t <- resolveType(propName, schema, cur)
+        } yield last :+ t
+      }.map(types => AvroUnion(types))
     }
   }
+
+  private def resolveType(propName: String, schema: JsonSchema, jsonSchemaType: JsonSchemaType): Either[TranspileError, AvroType] =
+    jsonSchemaType match {
+      case JsonSchemaString => Right(AvroString)
+      case JsonSchemaNumber => Right(AvroDouble)
+      case JsonSchemaBool => Right(AvroBool)
+      case JsonSchemaNull => Right(AvroNull)
+      case JsonSchemaInteger => Right(AvroLong)
+      case JsonSchemaArray =>
+        schema.items match {
+          case Nil => Right(AvroArray(AvroBytes))
+          case x :: Nil =>
+            for {
+              itemType <- resolveType(propName, x)
+            } yield AvroArray(itemType)
+          case x :: xs => Left(TranspileError(s"Unimplemented: index by index array validation isn't supported yet at $propName"))
+        }
+      case JsonSchemaObject =>
+        schema.id match {
+          //how might we simply call transpile and be done?
+          case Some(_) => transpile(schema, None)
+          case None =>
+            //TODO: additional props only apply to props not present in properties
+            // they're accumulative, not exclusive
+            schema.additionalProperties match {
+              case None => Left(TranspileError(s"object without a type at $propName"))
+              case Some(additionalProps) => for {
+                valueType <- resolveType(propName, additionalProps)
+              } yield AvroMap(valueType)
+            }
+        }
+    }
 
   private def resolveEnum(propName: String, value: Seq[ujson.Value]): Either[TranspileError, AvroEnum] =
     value.foldLeft(Right(Seq[String]()).withLeft[TranspileError]) { case (acc, cur) =>
