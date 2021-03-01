@@ -22,16 +22,21 @@ object AvroWriter {
     result
   }
 
-  private def toJson(`type`: AvroType): ujson.Value =
-    `type` match {
-      case c @ AvroArray(t) =>
-        ujson.Obj("type" -> c.serialize(), "items" -> t.serialize())
-      case m @ AvroMap(t) =>
-        ujson.Obj("type" -> m.serialize(), "values" -> t.serialize())
-      case e @ AvroEnum(name, symbols) =>
-        ujson.Obj("type" -> e.serialize(), "name" -> name, "symbols" -> symbols)
-      case r: AvroRecord => toJson(r)
-      case t => ujson.Str(t.serialize())
+  private def toJson(avroType: AvroType): ujson.Value =
+    avroType match {
+      case AvroString => "string"
+      case AvroDouble => "double"
+      case AvroNull => "null"
+      case AvroBool => "boolean"
+      case AvroLong => "long"
+      case AvroBytes => "bytes"
+      case AvroArray(t) =>
+        ujson.Obj("type" -> "array", "items" -> toJson(t))
+      case AvroMap(t) =>
+        ujson.Obj("type" -> "map", "values" -> toJson(t))
+      case AvroEnum(name, symbols) =>
+        ujson.Obj("type" -> "enum", "name" -> name, "symbols" -> symbols)
+      case r: AvroRecord =>
+        toJson(r)
     }
-
 }

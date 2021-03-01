@@ -2,21 +2,7 @@ package io.carrera.jsontoavroschema
 
 import AvroOrder.AvroOrder
 
-sealed trait AvroType {
-  def serialize(): String =
-    this match {
-      case AvroString => "string"
-      case AvroDouble => "double"
-      case AvroNull => "null"
-      case AvroBool => "boolean"
-      case AvroLong => "long"
-      case AvroBytes => "bytes"
-      case _: AvroArray => "array"
-      case _: AvroMap => "map"
-      case _: AvroRecord => "record"
-      case _: AvroEnum => "enum"
-    }
-}
+sealed trait AvroType
 
 case object AvroString extends AvroType
 case object AvroDouble extends AvroType
