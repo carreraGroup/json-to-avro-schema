@@ -19,6 +19,8 @@ object AvroWriter {
       ujson.Obj("name" -> field.name)
     field.doc.foreach(d => result("doc") = d)
     result("type") = toJson(field.`type`)
+    field.default.foreach(d => result("default") = d)
+
     result
   }
 
@@ -36,7 +38,8 @@ object AvroWriter {
         ujson.Obj("type" -> "map", "values" -> toJson(t))
       case AvroEnum(name, symbols) =>
         ujson.Obj("type" -> "enum", "name" -> name, "symbols" -> symbols)
-      case AvroUnion(types) => types.map(toJson)
+      case AvroUnion(types) =>
+        types.map(toJson)
       case r: AvroRecord =>
         toJson(r)
     }

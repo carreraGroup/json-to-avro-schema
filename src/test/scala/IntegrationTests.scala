@@ -22,6 +22,7 @@ class IntegrationTests extends AnyFlatSpec with TableDrivenPropertyChecks with M
     "nested",
     "stringEnum",
     "union",
+    "optionalBoolean",
   )
 
   it should "run integration tests" in forAll(tests) { name =>

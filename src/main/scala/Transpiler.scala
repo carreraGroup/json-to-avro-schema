@@ -20,15 +20,17 @@ object Transpiler {
     id.path.parts.last
 
   private def resolveFields(schema: JsonSchema) =
-    schema.properties.foldLeft(Right(Seq[AvroField]()).withLeft[TranspileError]) { case (acc, (k, v)) =>
+    schema.properties.foldLeft(Right(Seq[AvroField]()).withLeft[TranspileError]) { case (acc, (name, prop)) =>
       for {
         last <- acc
-        t <- resolveType(k, v)
-        field =
-        AvroField(k, v.desc, t,
-          None, //TODO: default
-          None //TODO: order
-        )
+        t <- resolveType(name, prop)
+        (avroType, default) =
+          if (schema.required.contains(name))
+            (t, None)
+          else
+            (AvroUnion(Seq(AvroNull, t)), Some(ujson.Null))
+
+        field = AvroField(name, prop.desc, avroType, default, None /* TODO: order */)
       } yield last :+ field
     }
 

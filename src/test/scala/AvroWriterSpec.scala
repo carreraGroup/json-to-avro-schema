@@ -57,6 +57,29 @@ class AvroWriterSpec extends AnyFlatSpec {
     records should be(expected)
   }
 
+  it should "write default if available" in {
+    val schema =
+      AvroRecord("SomeRecord", None, None,
+        Seq(AvroField("id", Some("an id"), AvroString, Some(ujson.Null), None))
+      )
+
+    val expected = ujson.Obj(
+      "type" -> "record",
+      "name" -> "SomeRecord",
+      "fields" -> ujson.Arr(
+        ujson.Obj(
+          "name" -> "id",
+          "doc" -> "an id",
+          "type" -> "string",
+          "default" -> ujson.Null
+        )
+      ),
+    )
+
+    val records = AvroWriter.toJson(schema)
+    records should be(expected)
+  }
+
   it should "write item type if array" in {
     val schema =
       AvroRecord("Element", None, None,

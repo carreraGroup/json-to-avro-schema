@@ -11,7 +11,8 @@ class TranspilerSpec extends AnyFlatSpec {
       JsonSchema.empty.copy(
         id = schemaUri,
         desc = Some("a description"),
-        properties = Map("title" -> JsonSchema.empty.copy(desc = Some("a title"), types = Seq(JsonSchemaString)))
+        properties = Map("title" -> JsonSchema.empty.copy(desc = Some("a title"), types = Seq(JsonSchemaString))),
+        required = Seq("title")
       )
 
     val Right(avroSchema) = Transpiler.transpile(root, None)
@@ -38,7 +39,8 @@ class TranspilerSpec extends AnyFlatSpec {
     val root =
       JsonSchema.empty.copy(
         id = schemaUri,
-        properties = Map("maximum" -> JsonSchema.empty.copy(types = Seq(JsonSchemaNumber)))
+        properties = Map("maximum" -> JsonSchema.empty.copy(types = Seq(JsonSchemaNumber))),
+        required = Seq("maximum")
       )
 
     val Right(avroSchema) = Transpiler.transpile(root, None)
@@ -52,7 +54,8 @@ class TranspilerSpec extends AnyFlatSpec {
     val root =
       JsonSchema.empty.copy(
         id = schemaUri,
-        properties = Map("length" -> JsonSchema.empty.copy(types = Seq(JsonSchemaInteger)))
+        properties = Map("length" -> JsonSchema.empty.copy(types = Seq(JsonSchemaInteger))),
+        required = Seq("length")
       )
 
     val Right(avroSchema) = Transpiler.transpile(root, None)
@@ -62,10 +65,25 @@ class TranspilerSpec extends AnyFlatSpec {
     avroSchema should be(expectedRecord)
   }
 
+  it should "transpile optional values" in {
+    val root =
+      JsonSchema.empty.copy(
+        id = schemaUri,
+        properties = Map("length" -> JsonSchema.empty.copy(types = Seq(JsonSchemaInteger))),
+      )
+
+    val Right(avroSchema) = Transpiler.transpile(root, None)
+
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(AvroField("length", None, AvroUnion(Seq(AvroNull, AvroLong)), Some(ujson.Null), None)))
+    avroSchema should be(expectedRecord)
+  }
+
   it should "transpile booleans to booleans" in {
     val root = JsonSchema.empty.copy(
       id = schemaUri,
-      properties = Map("uniqueItems" -> JsonSchema.empty.copy(types = Seq(JsonSchemaBool)))
+      properties = Map("uniqueItems" -> JsonSchema.empty.copy(types = Seq(JsonSchemaBool))),
+      required = Seq("uniqueItems")
     )
     val Right(avroSchema) = Transpiler.transpile(root, None)
     val expectedRecord =
@@ -77,7 +95,8 @@ class TranspilerSpec extends AnyFlatSpec {
   it should "transpile nulls to nulls" in {
     val root = JsonSchema.empty.copy(
       id = schemaUri,
-      properties = Map("applesauce" -> JsonSchema.empty.copy(types = Seq(JsonSchemaNull)))
+      properties = Map("applesauce" -> JsonSchema.empty.copy(types = Seq(JsonSchemaNull))),
+      required = Seq("applesauce")
     )
     val Right(avroSchema) = Transpiler.transpile(root, None)
     val expectedRecord =
@@ -89,7 +108,8 @@ class TranspilerSpec extends AnyFlatSpec {
   it should "transpile empty schema to bytes" in {
     val root = JsonSchema.empty.copy(
       id = schemaUri,
-      properties = Map("const" -> JsonSchema.empty)
+      properties = Map("const" -> JsonSchema.empty),
+      required = Seq("const")
     )
     val Right(avroSchema) = Transpiler.transpile(root, None)
     val expectedRecord =
@@ -113,7 +133,8 @@ class TranspilerSpec extends AnyFlatSpec {
           types = Seq(JsonSchemaArray),
           items = Seq(JsonSchema.empty.copy(types = Seq(JsonSchemaString)))
         )
-      )
+      ),
+      required = Seq("someList")
     )
     val Right(avroSchema) = Transpiler.transpile(root, None)
     val expectedRecord =
@@ -137,7 +158,8 @@ class TranspilerSpec extends AnyFlatSpec {
           types = Seq(JsonSchemaArray),
           items = Seq(JsonSchema.empty)
         )
-      )
+      ),
+      required = Seq("examples")
     )
     val Right(avroSchema) = Transpiler.transpile(root, None)
     val expectedRecord =
@@ -154,7 +176,8 @@ class TranspilerSpec extends AnyFlatSpec {
      */
     val root = JsonSchema.empty.copy(
       id = schemaUri,
-      properties = Map("someList" -> JsonSchema.empty.copy(types = Seq(JsonSchemaArray)))
+      properties = Map("someList" -> JsonSchema.empty.copy(types = Seq(JsonSchemaArray))),
+      required = Seq("someList")
     )
     val Right(avroSchema) = Transpiler.transpile(root, None)
     val expectedRecord =
@@ -174,7 +197,8 @@ class TranspilerSpec extends AnyFlatSpec {
       properties = Map("someObj" -> JsonSchema.empty.copy(
         types = Seq(JsonSchemaObject),
         additionalProperties = Some(JsonSchema.empty.copy(types = Seq(JsonSchemaString)))
-      ))
+      )),
+      required = Seq("someObj")
     )
     val Right(avroSchema) = Transpiler.transpile(root, None)
     val expectedRecord =
@@ -197,8 +221,10 @@ class TranspilerSpec extends AnyFlatSpec {
       properties = Map("someObj" -> JsonSchema.empty.copy(
         id = Uri.parseOption("SomeObj"),
         types = Seq(JsonSchemaObject),
-        properties = Map("Inner" -> JsonSchema.empty.copy(types = Seq(JsonSchemaInteger)))
-      ))
+        properties = Map("Inner" -> JsonSchema.empty.copy(types = Seq(JsonSchemaInteger))),
+        required = Seq("Inner")
+      )),
+      required = Seq("someObj")
     )
     val Right(avroSchema) = Transpiler.transpile(root, None)
     val innerRecord = AvroRecord("SomeObj", None, None, Seq(AvroField("Inner", None, AvroLong, None, None)))
@@ -213,7 +239,8 @@ class TranspilerSpec extends AnyFlatSpec {
       properties = Map("someProp" -> JsonSchema.empty.copy(
           `enum` = Seq(ujson.Str("a"), ujson.Str("b"))
         )
-      )
+      ),
+      required = Seq("someProp")
     )
     val Right(avro) = Transpiler.transpile(root, None)
 
@@ -235,7 +262,8 @@ class TranspilerSpec extends AnyFlatSpec {
       properties = Map("someProp" -> JsonSchema.empty.copy(
         `enum` = Seq(ujson.Str("a"), ujson.Bool(false))
         )
-      )
+      ),
+      required = Seq("someProp")
     )
     val Left(err) = Transpiler.transpile(root, None)
     err.message should be("Unimplemented: non-string enums aren't supported yet at someProp. Value: false")
@@ -244,7 +272,8 @@ class TranspilerSpec extends AnyFlatSpec {
   it should "transpile type unions" in {
     val root = JsonSchema.empty.copy(
       id = schemaUri,
-      properties = Map("unionType" -> JsonSchema.empty.copy(types = Seq(JsonSchemaBool, JsonSchemaString)))
+      properties = Map("unionType" -> JsonSchema.empty.copy(types = Seq(JsonSchemaBool, JsonSchemaString))),
+      required = Seq("unionType")
     )
     val Right(avroSchema) = Transpiler.transpile(root, None)
     val expectedRecord =

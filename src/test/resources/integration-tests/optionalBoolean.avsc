@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "OptionalBool",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "optimize",
+      "type": ["null", "boolean"],
+      "default": null
+    }
+  ]
+}
