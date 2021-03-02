@@ -241,6 +241,18 @@ class TranspilerSpec extends AnyFlatSpec {
     err.message should be("Unimplemented: non-string enums aren't supported yet at someProp. Value: false")
   }
 
+  it should "transpile type unions" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map("unionType" -> JsonSchema.empty.copy(types = Seq(JsonSchemaBool, JsonSchemaString)))
+    )
+    val Right(avroSchema) = Transpiler.transpile(root, None)
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(AvroField("unionType", None, AvroUnion(Seq(AvroBool, AvroString)), None, None)))
+
+    avroSchema should be(expectedRecord)
+  }
+
   private def schemaUri =
     Uri.parseOption("http://json-schema.org/draft-06/schema#")
 }
