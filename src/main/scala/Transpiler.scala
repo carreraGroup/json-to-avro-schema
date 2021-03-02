@@ -11,45 +11,62 @@ object Transpiler {
    */
   def transpile(schema: JsonSchema, namespace: Option[String]): Either[TranspileError, AvroRecord] = {
     for {
+      name <- schema.id.map(toName).toRight(TranspileError("$id must be specified in root schema"))
+      record <- transpile(schema, namespace, name)
+    } yield record
+  }
+
+  private def transpile(schema: JsonSchema, namespace: Option[String], name: String): Either[TranspileError, AvroRecord] = {
+    for {
       fields <- resolveFields(schema)
-      name = schema.id.map(toName).getOrElse("unknown")
     } yield AvroRecord(name, namespace, schema.desc, fields)
   }
 
   private def toName(id: Uri) =
     id.path.parts.last
 
-  private def resolveFields(schema: JsonSchema) =
+  private def resolveFields(schema: JsonSchema):Either[TranspileError, Seq[AvroField]] =
     schema.properties.foldLeft(Right(Seq[AvroField]()).withLeft[TranspileError]) { case (acc, (name, prop)) =>
-      for {
-        last <- acc
-        t <- resolveType(name, prop)
-        (avroType, default) =
-          if (schema.required.contains(name))
-            (t, None)
-          else
-            (AvroUnion(Seq(AvroNull, t)), Some(ujson.Null))
-
-        field = AvroField(name, prop.desc, avroType, default, None /* TODO: order */)
-      } yield last :+ field
-    }
-
-  private def resolveType(propName: String, schema: JsonSchema): Either[TranspileError, AvroType] = {
-    schema.types match {
-      case Nil =>
-        /* types and enum aren't really mutually exclusive, but having both makes no sense in avro */
-        schema.`enum` match {
-          case Nil => Right(AvroBytes)
-          case xs => resolveEnum(propName, xs)
-        }
-      case x :: Nil => resolveType(propName, schema, x)
-      case xs => xs.foldLeft(Right(Seq[AvroType]()).withLeft[TranspileError]) { case (acc, cur) =>
         for {
           last <- acc
-          t <- resolveType(propName, schema, cur)
-        } yield last :+ t
-      }.map(types => AvroUnion(types))
+          field <- resolveField(name, prop, schema)
+        } yield last :+ field
     }
+
+  private def resolveField(name: String, prop: JsonSchema, schema: JsonSchema) =
+    for {
+      typeAndDefault <-
+        if (prop.properties.isEmpty)
+          for {
+            t <- resolveType(name, prop)
+            (avroType, default) =
+            if (schema.required.contains(name))
+              (t, None)
+            else
+              (AvroUnion(Seq(AvroNull, t)), Some(ujson.Null))
+          } yield (avroType, default)
+        else
+          for {
+            record <- transpile(prop, None, prop.id.map(toName).getOrElse(name))
+          } yield (record, None)
+    } yield AvroField(name, prop.desc, typeAndDefault._1, typeAndDefault._2, None /* TODO: order */)
+
+  private def resolveType(propName: String, schema: JsonSchema): Either[TranspileError, AvroType] = {
+      schema.types match {
+        case Nil =>
+          /* types and enum aren't really mutually exclusive, but having both makes no sense in avro */
+          schema.`enum` match {
+            case Nil => Right(AvroBytes)
+            case xs => resolveEnum(propName, xs)
+          }
+        case x :: Nil => resolveType(propName, schema, x)
+        case xs => xs.foldLeft(Right(Seq[AvroType]()).withLeft[TranspileError]) { case (acc, cur) =>
+          for {
+            last <- acc
+            t <- resolveType(propName, schema, cur)
+          } yield last :+ t
+        }.map(types => AvroUnion(types))
+      }
   }
 
   private def resolveType(propName: String, schema: JsonSchema, jsonSchemaType: JsonSchemaType): Either[TranspileError, AvroType] =

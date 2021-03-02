@@ -282,6 +282,75 @@ class TranspilerSpec extends AnyFlatSpec {
     avroSchema should be(expectedRecord)
   }
 
+  it should "transpile a record without an id" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map(
+        "A" -> JsonSchema.empty.copy(
+          properties = Map(
+            "name" -> JsonSchema.empty.copy(types = Seq(JsonSchemaString)),
+            "index" -> JsonSchema.empty.copy(types = Seq(JsonSchemaInteger))
+          ),
+          required = Seq("name", "index")
+        )
+      ),
+      required = Seq("A")
+    )
+    val Right(avro) = Transpiler.transpile(root, None)
+
+    val expected =
+      AvroRecord("schema", None, None,
+        Seq(
+          AvroField("A", None,
+            AvroRecord("A", None, None,
+              Seq(
+                AvroField("name", None, AvroString, None, None),
+                AvroField("index", None, AvroLong, None, None)
+              )
+            ), None, None
+          ),
+        )
+      )
+
+    avro should be(expected)
+  }
+
+  ignore should "resolve reference to a record" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map(
+        "A" -> JsonSchema.empty.copy(
+          properties = Map(
+            "name" -> JsonSchema.empty.copy(types = Seq(JsonSchemaString)),
+            "index" -> JsonSchema.empty.copy(types = Seq(JsonSchemaInteger))
+          )
+        ),
+        "B" -> JsonSchema.empty.copy(
+          ref = Uri.parseOption("#/properties/A")
+        )
+      ),
+      required = Seq("A","B")
+    )
+    val Right(avro) = Transpiler.transpile(root, None)
+
+    val expected =
+      AvroRecord("schema", None, None,
+        Seq(
+          AvroField("A", None,
+            AvroRecord("A", None, None,
+              Seq(
+                AvroField("name", None, AvroString, None, None),
+                AvroField("index", None, AvroLong, None, None)
+              )
+            ), None, None
+          ),
+          AvroField("B", None, AvroRef("A"), None, None)
+        )
+      )
+
+    avro should be(expected)
+  }
+
   private def schemaUri =
     Uri.parseOption("http://json-schema.org/draft-06/schema#")
 }
