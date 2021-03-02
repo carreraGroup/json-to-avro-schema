@@ -1,0 +1,28 @@
+{
+  "type": "record",
+  "name": "SiblingRef",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "A",
+      "type": {
+        "type": "record",
+        "name": "A",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "index",
+            "type": "long"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B",
+      "type": "A"
+    }
+  ]
+}

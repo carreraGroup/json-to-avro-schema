@@ -1,6 +1,8 @@
 package io.carrera.jsontoavroschema
 
-import io.lemonlabs.uri.Uri
+import io.lemonlabs.uri.{RelativeUrl, Uri}
+
+import scala.util.chaining.scalaUtilChainingOps
 
 object Transpiler {
   /*
@@ -22,8 +24,9 @@ object Transpiler {
     } yield AvroRecord(name, namespace, schema.desc, fields)
   }
 
-  private def toName(id: Uri) =
+  private def toName(id: Uri) = {
     id.path.parts.last
+  }
 
   private def resolveFields(schema: JsonSchema):Either[TranspileError, Seq[AvroField]] =
     schema.properties.foldLeft(Right(Seq[AvroField]()).withLeft[TranspileError]) { case (acc, (name, prop)) =>
@@ -52,21 +55,29 @@ object Transpiler {
     } yield AvroField(name, prop.desc, typeAndDefault._1, typeAndDefault._2, None /* TODO: order */)
 
   private def resolveType(propName: String, schema: JsonSchema): Either[TranspileError, AvroType] = {
-      schema.types match {
-        case Nil =>
-          /* types and enum aren't really mutually exclusive, but having both makes no sense in avro */
-          schema.`enum` match {
-            case Nil => Right(AvroBytes)
-            case xs => resolveEnum(propName, xs)
-          }
-        case x :: Nil => resolveType(propName, schema, x)
-        case xs => xs.foldLeft(Right(Seq[AvroType]()).withLeft[TranspileError]) { case (acc, cur) =>
-          for {
-            last <- acc
-            t <- resolveType(propName, schema, cur)
-          } yield last :+ t
-        }.map(types => AvroUnion(types))
-      }
+    /*
+     * according to the spec, all other properties MUST be ignored if a ref is present
+     * https://tools.ietf.org/html/draft-wright-json-schema-01#section-8
+     */
+    schema.ref match {
+      case Some(uri) => resolveRefUri(uri)
+      case None =>
+        schema.types match {
+          case Nil =>
+            /* types and enum aren't really mutually exclusive, but having both makes no sense in avro */
+            schema.`enum` match {
+              case Nil => Right(AvroBytes)
+              case xs => resolveEnum(propName, xs)
+            }
+          case x :: Nil => resolveType(propName, schema, x)
+          case xs => xs.foldLeft(Right(Seq[AvroType]()).withLeft[TranspileError]) { case (acc, cur) =>
+            for {
+              last <- acc
+              t <- resolveType(propName, schema, cur)
+            } yield last :+ t
+          }.map(types => AvroUnion(types))
+        }
+    }
   }
 
   private def resolveType(propName: String, schema: JsonSchema, jsonSchemaType: JsonSchemaType): Either[TranspileError, AvroType] =
@@ -112,6 +123,16 @@ object Transpiler {
       } yield last :+ str
     } /* json schema enums don't have names, so we build one from it's parent property */
       .map(values => AvroEnum(s"${propName}Enum", values))
+
+  private def resolveRefUri(uri: Uri): Either[TranspileError, AvroRef] =
+    uri match {
+      case RelativeUrl(_, _, fragment) =>
+        fragment
+          .toRight(TranspileError("Expected Uri fragment in ref Uri"))
+          .map(fragment => fragment.split("/").last)
+          .map(AvroRef)
+      case unknown => Left(TranspileError(s"Unimplemented ref URI type for: $unknown"))
+    }
 }
 
 final case class TranspileError(message: String = "", cause: Throwable = None.orNull)

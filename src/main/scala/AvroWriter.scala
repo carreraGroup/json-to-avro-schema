@@ -42,5 +42,6 @@ object AvroWriter {
         types.map(toJson)
       case r: AvroRecord =>
         toJson(r)
+      case AvroRef(name) => name
     }
 }
