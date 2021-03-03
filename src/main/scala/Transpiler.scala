@@ -24,9 +24,8 @@ object Transpiler {
     } yield AvroRecord(name, namespace, schema.desc, fields)
   }
 
-  private def toName(id: Uri) = {
+  private def toName(id: Uri) =
     id.path.parts.last
-  }
 
   private def resolveFields(schema: JsonSchema):Either[TranspileError, Seq[AvroField]] =
     schema.properties.foldLeft(Right(Seq[AvroField]()).withLeft[TranspileError]) { case (acc, (name, prop)) =>
