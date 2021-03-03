@@ -96,18 +96,11 @@ object Transpiler {
           case x :: xs => Left(TranspileError(s"Unimplemented: index by index array validation isn't supported yet at $propName"))
         }
       case JsonSchemaObject =>
-        schema.id match {
-          //how might we simply call transpile and be done?
-          case Some(_) => transpile(schema, None)
-          case None =>
-            //TODO: additional props only apply to props not present in properties
-            // they're accumulative, not exclusive
-            schema.additionalProperties match {
-              case None => Left(TranspileError(s"object without a type at $propName"))
-              case Some(additionalProps) => for {
-                valueType <- resolveType(propName, additionalProps)
-              } yield AvroMap(valueType)
-            }
+        schema.additionalProperties match {
+          case None => Left(TranspileError(s"object without a type at $propName"))
+          case Some(additionalProps) => for {
+            valueType <- resolveType(propName, additionalProps)
+          } yield AvroMap(valueType)
         }
     }
 
