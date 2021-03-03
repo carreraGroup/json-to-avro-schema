@@ -189,4 +189,36 @@ class AvroWriterSpec extends AnyFlatSpec {
     records should be(expected)
   }
 
+  it should "write references to types defined in this schema" in {
+    val schema = AvroRecord("Record", None, None,
+      Seq(
+        AvroField(
+          "A", None,
+          AvroRecord("A", None, None, Seq(AvroField("name", None, AvroString, None, None))),
+          None, None
+        ),
+        AvroField("B", None, AvroRef("A"), None, None)
+      )
+    )
+    val expected = ujson.Obj(
+      "type" -> "record",
+      "name" -> "Record",
+      "fields" -> ujson.Arr(
+        ujson.Obj(
+          "name" -> "A",
+          "type" -> ujson.Obj(
+            "type" -> "record",
+            "name" -> "A",
+            "fields" -> ujson.Arr(
+              ujson.Obj("name" -> "name", "type" -> "string")
+            )
+          )
+        ),
+        ujson.Obj("name" -> "B", "type" -> "A")
+      ),
+    )
+    val records = AvroWriter.toJson(schema)
+    records should be(expected)
+  }
+
 }

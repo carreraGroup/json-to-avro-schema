@@ -315,7 +315,7 @@ class TranspilerSpec extends AnyFlatSpec {
     avro should be(expected)
   }
 
-  ignore should "resolve reference to a record" in {
+  it should "resolve reference to a record" in {
     val root = JsonSchema.empty.copy(
       id = schemaUri,
       properties = Map(
@@ -323,7 +323,8 @@ class TranspilerSpec extends AnyFlatSpec {
           properties = Map(
             "name" -> JsonSchema.empty.copy(types = Seq(JsonSchemaString)),
             "index" -> JsonSchema.empty.copy(types = Seq(JsonSchemaInteger))
-          )
+          ),
+          required = Seq("name", "index")
         ),
         "B" -> JsonSchema.empty.copy(
           ref = Uri.parseOption("#/properties/A")
