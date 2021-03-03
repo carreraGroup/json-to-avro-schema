@@ -13,9 +13,9 @@ Below is the list of JSON schema keywords and their implementation status.
 
 | Keyword              | Status  | FHIR Uses | Notes                                                                               | Specification URL                                                               |
 |----------------------|---------|-----------|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| $id                  |         | Y         |                                                                                     | https://tools.ietf.org/html/draft-wright-json-schema-01#section-9.2             |
+| $id                  | Partial | Y         |                                                                                     | https://tools.ietf.org/html/draft-wright-json-schema-01#section-9.2             |
 | $schema              |         | Y         | In the future, we should use this to determine how to parse                         | https://tools.ietf.org/html/draft-wright-json-schema-01#section-7               |
-| $ref                 |         | Y         |                                                                                     | https://tools.ietf.org/html/draft-wright-json-schema-01#section-8               |
+| $ref                 | Partial | Y         | https://github.com/carreragroup/json-to-avro-schema/issues/27                       | https://tools.ietf.org/html/draft-wright-json-schema-01#section-8               |
 | definitions          |         | Y         |                                                                                     | https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-7.1  |
 | title                |         | Y         | Could go in AVRO `doc` field with description                                       | https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-7.2  |
 | description          | DONE    | Y         |                                                                                     | https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-7.2  |
@@ -29,7 +29,7 @@ Below is the list of JSON schema keywords and their implementation status.
 | maxLength            |         | N         | FHIR defines it's own maxLength                                                     | https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-6.6  |
 | minLength            |         | N         |                                                                                     | https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-6.7  |
 | pattern              |         | Y         |                                                                                     | https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-6.8  |
-| items                | Partial | Y         | FHIR typically uses a $ref for the type.<br>See #9 for what's left to impelment.    | https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-6.9  |
+| items                | Partial | Y         | FHIR typically uses a $ref for the type.<br>See #9 for what's left to implement.    | https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-6.9  |
 | additionalItems      |         | N         |                                                                                     | https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-6.10 |
 | maxItems             |         | N         |                                                                                     | https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-6.11 |
 | minItems             |         | N         |                                                                                     | https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-6.12 |

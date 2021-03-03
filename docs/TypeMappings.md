@@ -14,7 +14,7 @@
 | array   | array*        | *avro complex type, requires knowing the item type                               |
 | object* | record        | if an `$id` is present                                                           |
 | object* | map           | if an `$id` is not present                                                       |
-| enum*   | ???           | JSchema allows enum values to be `any`, but AVRO expects a list of strings       |
+| enum*   | enum          | JSchema allows enum values to be `any`, but AVRO expects a list of strings.<br>It is currently an error if the transpiler encounters a non-string enum. |
 
 <!-- References -->
 [jsonspec]: https://tools.ietf.org/html/rfc7159#section-6
