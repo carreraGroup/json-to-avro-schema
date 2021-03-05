@@ -1,11 +1,14 @@
 package io.carrera.jsontoavroschema
 
 import io.lemonlabs.uri.Uri
+import io.lemonlabs.uri.typesafe._
+import io.lemonlabs.uri.typesafe.dsl._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 
 class refResolverSpec extends AnyFlatSpec {
-  val schemaUri = Uri.parseOption("http://example.com/schemaName")
+  val schemaUri = "http://example.com/schemaName"
+  val schemaUriOption = Uri.parseOption(schemaUri)
 
   it should "error if root does not have an ID" in {
     val Left(err) = RefResolver.normalizeIds(JsonSchema.empty)
@@ -14,7 +17,7 @@ class refResolverSpec extends AnyFlatSpec {
 
   it should "resolve ids in definitions" in {
     val root = JsonSchema.empty.copy(
-      id = schemaUri,
+      id = schemaUriOption,
       definitions = Map(
         "A" -> JsonSchema.empty.copy(
           id = Uri.parseOption("#foo")
@@ -27,15 +30,15 @@ class refResolverSpec extends AnyFlatSpec {
     val expected = root.copy(
       definitions = root.definitions + ("A" ->
         JsonSchema.empty.copy(
-          id = buildAbsolute(schemaUri, "#foo"))
-        )
+          id = Some(schemaUri `#` "foo")
+        ))
     )
     result should be(expected)
   }
 
   it should "resolve ids in nested definitions" in {
     val root = JsonSchema.empty.copy(
-      id = schemaUri,
+      id = schemaUriOption,
       definitions = Map(
         "A" -> JsonSchema.empty.copy(
           definitions = Map(
@@ -51,7 +54,7 @@ class refResolverSpec extends AnyFlatSpec {
       definitions = root.definitions + ("A" ->
         JsonSchema.empty.copy(
           definitions = Map(
-            "B" -> JsonSchema.empty.copy(id = buildAbsolute(schemaUri, "#bar"))
+            "B" -> JsonSchema.empty.copy(id = Some(schemaUri `#` "bar"))
           )
         )
       )
@@ -61,7 +64,7 @@ class refResolverSpec extends AnyFlatSpec {
 
   it should "resolve introduce a new namespace at each id" in {
     val root = JsonSchema.empty.copy(
-      id = schemaUri,
+      id = schemaUriOption,
       definitions = Map(
         "A" -> JsonSchema.empty.copy(
           id = Uri.parseOption("foo"),
@@ -86,12 +89,20 @@ class refResolverSpec extends AnyFlatSpec {
     result should be(expected)
   }
 
+  it should "visit additionalItems" in {
+    fail()
+  }
 
-  private def buildAbsolute(maybeBase: Option[Uri], relative: String):Option[Uri] =
-    maybeBase.map(uri => buildAbsolute(uri, relative))
+  ignore should "visit contains"
+  ignore should "visit properties"
+  ignore should "visit patternProperties"
+  ignore should "visit additionalProperties"
+  ignore should "visit dependencies"
+  ignore should "visit propertyNames"
+  ignore should "visit allOf"
+  ignore should "visit anyOf"
+  ignore should "visit oneOf"
+  ignore should "visit not"
 
-  private def buildAbsolute(base: Uri, relative: String):Uri =
-      Uri.parse(base + relative)
   //TODO: visit all nodes that could have a schema
-
 }
