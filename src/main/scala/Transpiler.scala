@@ -14,6 +14,9 @@ object Transpiler {
   def transpile(schema: JsonSchema, namespace: Option[String]): Either[TranspileError, AvroRecord] = {
     for {
       name <- schema.id.map(toName).toRight(TranspileError("$id must be specified in root schema"))
+      //TODO: resolve reference table of canonical & id
+      // symbols <- resolveIds
+      // schema <- normalizeReferences(schema, symbols)
       record <- transpile(schema, namespace, name)
     } yield record
   }
@@ -59,7 +62,7 @@ object Transpiler {
      * https://tools.ietf.org/html/draft-wright-json-schema-01#section-8
      */
     schema.ref match {
-      case Some(uri) => resolveRefUri(uri)
+      case Some(uri) => resolveRefUri(uri) //FIXME: get id if available
       case None =>
         schema.types match {
           case Nil =>
