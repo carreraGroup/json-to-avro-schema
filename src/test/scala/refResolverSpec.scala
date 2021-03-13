@@ -163,9 +163,77 @@ class refResolverSpec extends AnyFlatSpec {
     result should be(expected)
   }
 
-  ignore should "visit patternProperties"
-  ignore should "visit additionalProperties"
-  ignore should "visit dependencies"
+  it should "visit patternProperties" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUriOption,
+      patternProperties = Map(
+        "A" -> JsonSchema.empty.copy(
+          id = Uri.parseOption("foo"),
+          properties = Map(
+            "B" -> JsonSchema.empty.copy(id = Uri.parseOption("#bar"))
+          )
+        )
+      )
+    )
+
+    val Right(result) = RefResolver.normalizeIds(root)
+
+    val expected = root.copy(
+      patternProperties = root.definitions + ("A" ->
+        JsonSchema.empty.copy(
+          id = Uri.parseOption("http://example.com/schemaName/foo"),
+          properties = Map(
+            "B" -> JsonSchema.empty.copy(id = Uri.parseOption("http://example.com/schemaName/foo#bar"))
+          )
+        ))
+    )
+    result should be(expected)
+  }
+
+  it should "visit additionalProperties" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUriOption,
+      additionalProperties = Some(
+        JsonSchema.empty.copy(
+          id = Uri.parseOption("#foo")
+        )
+      )
+    )
+
+    val Right(result) = RefResolver.normalizeIds(root)
+
+    val expected = root.copy(
+      additionalProperties = Some(
+        JsonSchema.empty.copy(
+          id = Some(s"$schemaUri#foo")
+        )
+      )
+    )
+    result should be(expected)
+  }
+
+  ignore should "visit dependencies" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUriOption,
+      dependencies = Map("a" ->
+        Right(JsonSchema.empty.copy(
+          id = Uri.parseOption("#foo")
+        ))
+      )
+    )
+
+    val Right(result) = RefResolver.normalizeIds(root)
+
+    val expected = root.copy(
+      dependencies = Map("a" ->
+        Right(JsonSchema.empty.copy(
+          id = Uri.parseOption(s"$schemaUri#foo")
+        ))
+      )
+    )
+    result should be(expected)
+  }
+
   ignore should "visit propertyNames"
   ignore should "visit allOf"
   ignore should "visit anyOf"

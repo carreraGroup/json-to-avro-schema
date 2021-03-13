@@ -16,11 +16,15 @@ object RefResolver {
       additionalItems <- resolveOptSchema(schema.additionalItems, baseUri, schema)
       contains <- resolveOptSchema(schema.contains, baseUri, schema)
       properties <- resolveSchemaMap(schema.properties, baseUri, schema)
+      patternProps <- resolveSchemaMap(schema.patternProperties, baseUri, schema)
+      additionalProps <- resolveOptSchema(schema.additionalProperties, baseUri, schema)
     } yield schema.copy(
       definitions = definitions,
       additionalItems = additionalItems,
       contains = contains,
       properties = properties,
+      patternProperties = patternProps,
+      additionalProperties = additionalProps
     )
 
   private def resolveSchemaMap(schemaMap: Map[String, JsonSchema], baseUri: Uri, ctx: JsonSchema) =
