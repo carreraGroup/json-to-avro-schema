@@ -93,6 +93,38 @@ class refResolverSpec extends AnyFlatSpec {
     result should be(expected)
   }
 
+  it should "pass through URNs" in {
+    // they're already unique identifiers and can't be relative
+    val root = JsonSchema.empty.copy(
+      id = schemaUriOption,
+      definitions = Map(
+        "A" -> JsonSchema.empty.copy(
+          id = Uri.parseOption("urn:uuid:ee564b8a-7a87-4125-8c96-e9f123d6766f"),
+        )
+      )
+    )
+
+    val Right(result) = RefResolver.normalizeIds(root)
+
+    result should be(root)
+  }
+
+  it should "pass through Absolute URLs" in {
+    // they're already unique identifiers and can't be relative
+    val root = JsonSchema.empty.copy(
+      id = schemaUriOption,
+      definitions = Map(
+        "A" -> JsonSchema.empty.copy(
+          id = Uri.parseOption("http://example.com/foo"),
+        )
+      )
+    )
+
+    val Right(result) = RefResolver.normalizeIds(root)
+
+    result should be(root)
+  }
+
   it should "visit additionalItems" in {
     val root = JsonSchema.empty.copy(
       id = schemaUriOption,
