@@ -23,6 +23,7 @@ object RefResolver {
       allOf <- resolveSchemas(schema.allOf, baseUri, schema)
       anyOf <- resolveSchemas(schema.anyOf, baseUri, schema)
       oneOf <- resolveSchemas(schema.oneOf, baseUri, schema)
+      not <- resolveSchema(schema.not, baseUri, schema)
     } yield schema.copy(
       definitions = definitions,
       additionalItems = additionalItems,
@@ -35,6 +36,7 @@ object RefResolver {
       allOf = allOf,
       anyOf = anyOf,
       oneOf = oneOf,
+      not = not,
     )
 
   private def resolveDependencies(deps: Map[String, Either[Seq[String], JsonSchema]], baseUri: Uri, ctx: JsonSchema): Either[ResolutionError,  Map[String, Either[Seq[String], JsonSchema]]] =

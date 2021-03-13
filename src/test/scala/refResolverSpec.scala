@@ -322,7 +322,27 @@ class refResolverSpec extends AnyFlatSpec {
     result should be(expected)
   }
 
-  ignore should "visit not"
+  it should "visit not" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUriOption,
+      not = Some(
+        JsonSchema.empty.copy(
+          id = Uri.parseOption("#foo")
+        )
+      )
+    )
+
+    val Right(result) = RefResolver.normalizeIds(root)
+
+    val expected = root.copy(
+      not = Some(
+        JsonSchema.empty.copy(
+          id = Some(s"$schemaUri#foo")
+        )
+      )
+    )
+    result should be(expected)
+  }
 
   //TODO: visit all nodes that could have a schema
 }
