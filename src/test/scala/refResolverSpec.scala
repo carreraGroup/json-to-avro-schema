@@ -234,7 +234,28 @@ class refResolverSpec extends AnyFlatSpec {
     result should be(expected)
   }
 
-  ignore should "visit propertyNames"
+  it should "visit propertyNames" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUriOption,
+      propertyNames = Some(
+        JsonSchema.empty.copy(
+          id = Uri.parseOption("#foo")
+        )
+      )
+    )
+
+    val Right(result) = RefResolver.normalizeIds(root)
+
+    val expected = root.copy(
+      propertyNames = Some(
+        JsonSchema.empty.copy(
+          id = Some(s"$schemaUri#foo")
+        )
+      )
+    )
+    result should be(expected)
+  }
+
   ignore should "visit allOf"
   ignore should "visit anyOf"
   ignore should "visit oneOf"

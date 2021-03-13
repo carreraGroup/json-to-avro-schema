@@ -19,6 +19,7 @@ object RefResolver {
       patternProps <- resolveSchemaMap(schema.patternProperties, baseUri, schema)
       additionalProps <- resolveOptSchema(schema.additionalProperties, baseUri, schema)
       deps <- resolveDependencies(schema.dependencies, baseUri, schema)
+      propNames <- resolveOptSchema(schema.propertyNames, baseUri, schema)
     } yield schema.copy(
       definitions = definitions,
       additionalItems = additionalItems,
@@ -27,6 +28,7 @@ object RefResolver {
       patternProperties = patternProps,
       additionalProperties = additionalProps,
       dependencies = deps,
+      propertyNames = propNames,
     )
 
   private def resolveDependencies(deps: Map[String, Either[Seq[String], JsonSchema]], baseUri: Uri, ctx: JsonSchema): Either[ResolutionError,  Map[String, Either[Seq[String], JsonSchema]]] =
