@@ -380,6 +380,4 @@ class IdNormalizerSpec extends AnyFlatSpec {
     )
     result should be(expected)
   }
-
-  //TODO: visit all nodes that could have a schema
 }
