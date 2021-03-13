@@ -5,12 +5,12 @@ import io.lemonlabs.uri.typesafe.dsl._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 
-class refResolverSpec extends AnyFlatSpec {
+class IdNormalizerSpec extends AnyFlatSpec {
   val schemaUri = "http://example.com/schemaName"
   val schemaUriOption = Uri.parseOption(schemaUri)
 
   it should "error if root does not have an ID" in {
-    val Left(err) = RefResolver.normalizeIds(JsonSchema.empty)
+    val Left(err) = IdNormalizer.normalizeIds(JsonSchema.empty)
     err.getMessage should be("$id must be specified in root schema")
   }
 
@@ -24,7 +24,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       definitions = root.definitions + ("A" ->
@@ -47,7 +47,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       definitions = root.definitions + ("A" ->
@@ -79,7 +79,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       definitions = root.definitions + ("A" ->
@@ -104,7 +104,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     result should be(root)
   }
@@ -120,7 +120,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     result should be(root)
   }
@@ -136,7 +136,7 @@ class refResolverSpec extends AnyFlatSpec {
       ))
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       additionalItems = Some(JsonSchema.empty.copy(
@@ -160,7 +160,7 @@ class refResolverSpec extends AnyFlatSpec {
       ))
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       contains = Some(JsonSchema.empty.copy(
@@ -186,7 +186,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       properties = root.definitions + ("A" ->
@@ -213,7 +213,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       patternProperties = root.definitions + ("A" ->
@@ -237,7 +237,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       additionalProperties = Some(
@@ -259,7 +259,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       dependencies = Map("a" ->
@@ -281,7 +281,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       propertyNames = Some(
@@ -303,7 +303,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       allOf = Seq(
@@ -325,7 +325,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       anyOf = Seq(
@@ -347,7 +347,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       oneOf = Seq(
@@ -369,7 +369,7 @@ class refResolverSpec extends AnyFlatSpec {
       )
     )
 
-    val Right(result) = RefResolver.normalizeIds(root)
+    val Right(result) = IdNormalizer.normalizeIds(root)
 
     val expected = root.copy(
       not = Some(

@@ -2,7 +2,7 @@ package io.carrera.jsontoavroschema
 
 import io.lemonlabs.uri.{AbsoluteUrl, EmptyPath, RelativeUrl, RootlessPath, Uri, Urn}
 
-object RefResolver {
+object IdNormalizer {
   def normalizeIds(root: JsonSchema): Either[ResolutionError, JsonSchema] =
     for {
       baseUri <- root.id.toRight(ResolutionError("$id must be specified in root schema"))
