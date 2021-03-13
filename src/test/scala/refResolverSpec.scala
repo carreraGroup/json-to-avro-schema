@@ -1,7 +1,6 @@
 package io.carrera.jsontoavroschema
 
 import io.lemonlabs.uri.Uri
-import io.lemonlabs.uri.typesafe._
 import io.lemonlabs.uri.typesafe.dsl._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
@@ -30,7 +29,7 @@ class refResolverSpec extends AnyFlatSpec {
     val expected = root.copy(
       definitions = root.definitions + ("A" ->
         JsonSchema.empty.copy(
-          id = Some(schemaUri `#` "foo")
+          id = Some(s"$schemaUri#foo")
         ))
     )
     result should be(expected)
@@ -54,7 +53,7 @@ class refResolverSpec extends AnyFlatSpec {
       definitions = root.definitions + ("A" ->
         JsonSchema.empty.copy(
           definitions = Map(
-            "B" -> JsonSchema.empty.copy(id = Some(schemaUri `#` "bar"))
+            "B" -> JsonSchema.empty.copy(id = Some(s"$schemaUri#bar"))
           )
         )
       )
@@ -90,7 +89,27 @@ class refResolverSpec extends AnyFlatSpec {
   }
 
   it should "visit additionalItems" in {
-    fail()
+    val root = JsonSchema.empty.copy(
+      id = schemaUriOption,
+      additionalItems = Some(JsonSchema.empty.copy(
+        id = Uri.parseOption("foo/bar"),
+        additionalItems = Some(JsonSchema.empty.copy(
+          id = Uri.parseOption("baz")
+        ))
+      ))
+    )
+
+    val Right(result) = RefResolver.normalizeIds(root)
+
+    val expected = root.copy(
+      additionalItems = Some(JsonSchema.empty.copy(
+        Uri.parseOption("http://example.com/schemaName/foo/bar"),
+        additionalItems = Some(JsonSchema.empty.copy(
+          id = Uri.parseOption("http://example.com/schemaName/foo/bar/baz")
+        ))
+      ))
+    )
+    result should be(expected)
   }
 
   ignore should "visit contains"
