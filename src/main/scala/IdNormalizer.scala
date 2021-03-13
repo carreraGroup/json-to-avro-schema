@@ -1,6 +1,6 @@
 package io.carrera.jsontoavroschema
 
-import io.lemonlabs.uri.{AbsoluteUrl, EmptyPath, RelativeUrl, RootlessPath, Uri, Urn}
+import io.lemonlabs.uri._
 
 object IdNormalizer {
   def normalizeIds(root: JsonSchema): Either[ResolutionError, JsonSchema] =

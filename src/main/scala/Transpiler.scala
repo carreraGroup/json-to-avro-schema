@@ -14,10 +14,12 @@ object Transpiler {
   def transpile(schema: JsonSchema, namespace: Option[String]): Either[TranspileError, AvroRecord] = {
     for {
       name <- schema.id.map(toName).toRight(TranspileError("$id must be specified in root schema"))
+      normalized <- IdNormalizer.normalizeIds(schema).left.map(err => TranspileError("Failed to normalize IDs", err))
       //TODO: resolve reference table of canonical & id
-      // symbols <- resolveIds
-      // schema <- normalizeReferences(schema, symbols)
-      record <- transpile(schema, namespace, name)
+      // symbols <- resolveSymbols(schema)
+      // schema <- resolveReferences(schema, symbols)
+      // TODO: use namespaces from normalized IDs
+      record <- transpile(normalized, namespace, name)
     } yield record
   }
 
