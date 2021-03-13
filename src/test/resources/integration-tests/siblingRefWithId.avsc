@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "SiblingRef",
+  "name": "SiblingRefWithId",
   "namespace": "com.example",
   "fields": [
     {
