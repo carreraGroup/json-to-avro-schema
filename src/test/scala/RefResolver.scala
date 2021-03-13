@@ -12,14 +12,17 @@ object RefResolver {
 
   private def normalizeIds(schema: JsonSchema, baseUri: Uri): Either[ResolutionError, JsonSchema] =
     for {
-      definitions <- resolveSchemaMap(schema.definitions, baseUri, schema)
-      additionalItems <- resolveOptSchema(schema.additionalItems, baseUri, schema)
-      contains <- resolveOptSchema(schema.contains, baseUri, schema)
-      properties <- resolveSchemaMap(schema.properties, baseUri, schema)
-      patternProps <- resolveSchemaMap(schema.patternProperties, baseUri, schema)
-      additionalProps <- resolveOptSchema(schema.additionalProperties, baseUri, schema)
+      definitions <- resolveSchemas(schema.definitions, baseUri, schema)
+      additionalItems <- resolveSchema(schema.additionalItems, baseUri, schema)
+      contains <- resolveSchema(schema.contains, baseUri, schema)
+      properties <- resolveSchemas(schema.properties, baseUri, schema)
+      patternProps <- resolveSchemas(schema.patternProperties, baseUri, schema)
+      additionalProps <- resolveSchema(schema.additionalProperties, baseUri, schema)
       deps <- resolveDependencies(schema.dependencies, baseUri, schema)
-      propNames <- resolveOptSchema(schema.propertyNames, baseUri, schema)
+      propNames <- resolveSchema(schema.propertyNames, baseUri, schema)
+      allOf <- resolveSchemas(schema.allOf, baseUri, schema)
+      anyOf <- resolveSchemas(schema.anyOf, baseUri, schema)
+      oneOf <- resolveSchemas(schema.oneOf, baseUri, schema)
     } yield schema.copy(
       definitions = definitions,
       additionalItems = additionalItems,
@@ -29,6 +32,9 @@ object RefResolver {
       additionalProperties = additionalProps,
       dependencies = deps,
       propertyNames = propNames,
+      allOf = allOf,
+      anyOf = anyOf,
+      oneOf = oneOf,
     )
 
   private def resolveDependencies(deps: Map[String, Either[Seq[String], JsonSchema]], baseUri: Uri, ctx: JsonSchema): Either[ResolutionError,  Map[String, Either[Seq[String], JsonSchema]]] =
@@ -44,7 +50,15 @@ object RefResolver {
       } yield last + (k -> dep)
     }
 
-  private def resolveSchemaMap(schemaMap: Map[String, JsonSchema], baseUri: Uri, ctx: JsonSchema) =
+  private def resolveSchemas(schemas: IterableOnce[JsonSchema], baseUri: Uri, ctx: JsonSchema) =
+    schemas.iterator.foldLeft(Right(Seq[JsonSchema]()).withLeft[ResolutionError]) { case (acc, cur) =>
+      for {
+        last <- acc
+        schema <- resolveSchema(cur, baseUri, ctx)
+      } yield last :+ schema
+    }
+
+  private def resolveSchemas(schemaMap: Map[String, JsonSchema], baseUri: Uri, ctx: JsonSchema) =
     schemaMap.foldLeft(Right(Map[String, JsonSchema]()).withLeft[ResolutionError]) { case (acc, (k, v)) =>
       for {
         last <- acc
@@ -52,7 +66,7 @@ object RefResolver {
       } yield last + (k -> schema)
     }
 
-  private def resolveOptSchema(maybeSchema: Option[JsonSchema], baseUri: Uri, ctx: JsonSchema): Either[ResolutionError, Option[JsonSchema]] =
+  private def resolveSchema(maybeSchema: Option[JsonSchema], baseUri: Uri, ctx: JsonSchema): Either[ResolutionError, Option[JsonSchema]] =
     maybeSchema match {
       case None => Right(None)
       case Some(schema) =>

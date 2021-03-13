@@ -256,9 +256,72 @@ class refResolverSpec extends AnyFlatSpec {
     result should be(expected)
   }
 
-  ignore should "visit allOf"
-  ignore should "visit anyOf"
-  ignore should "visit oneOf"
+  it should "visit allOf" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUriOption,
+      allOf = Seq(
+        JsonSchema.empty.copy(
+          id = Uri.parseOption("#foo")
+        )
+      )
+    )
+
+    val Right(result) = RefResolver.normalizeIds(root)
+
+    val expected = root.copy(
+      allOf = Seq(
+        JsonSchema.empty.copy(
+          id = Some(s"$schemaUri#foo")
+        )
+      )
+    )
+    result should be(expected)
+  }
+
+  it should "visit anyOf" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUriOption,
+      anyOf = Seq(
+        JsonSchema.empty.copy(
+          id = Uri.parseOption("#foo")
+        )
+      )
+    )
+
+    val Right(result) = RefResolver.normalizeIds(root)
+
+    val expected = root.copy(
+      anyOf = Seq(
+        JsonSchema.empty.copy(
+          id = Some(s"$schemaUri#foo")
+        )
+      )
+    )
+    result should be(expected)
+  }
+
+  it should "visit oneOf" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUriOption,
+      oneOf = Seq(
+        JsonSchema.empty.copy(
+          id = Uri.parseOption("#foo")
+        )
+      )
+    )
+
+    val Right(result) = RefResolver.normalizeIds(root)
+
+    val expected = root.copy(
+      oneOf = Seq(
+        JsonSchema.empty.copy(
+          id = Some(s"$schemaUri#foo")
+        )
+      )
+    )
+    result should be(expected)
+  }
+
   ignore should "visit not"
 
   //TODO: visit all nodes that could have a schema
