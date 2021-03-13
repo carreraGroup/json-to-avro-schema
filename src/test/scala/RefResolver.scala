@@ -12,7 +12,7 @@ object RefResolver {
 
   private def normalizeIds(schema: JsonSchema, baseUri: Uri): Either[ResolutionError, JsonSchema] =
     for {
-      definitions <- definitions(schema.definitions, baseUri, schema)
+      definitions <- resolveSchemaMap(schema.definitions, baseUri, schema)
       additionalItems <- resolveOptSchema(schema.additionalItems, baseUri, schema)
       contains <- resolveOptSchema(schema.contains, baseUri, schema)
     } yield schema.copy(
@@ -21,12 +21,12 @@ object RefResolver {
       contains = contains
     )
 
-  private def definitions(definitions: Map[String, JsonSchema], baseUri: Uri, ctx: JsonSchema) =
-    definitions.foldLeft(Right(Map[String, JsonSchema]()).withLeft[ResolutionError]) { case (acc, (k, v)) =>
+  private def resolveSchemaMap(schemaMap: Map[String, JsonSchema], baseUri: Uri, ctx: JsonSchema) =
+    schemaMap.foldLeft(Right(Map[String, JsonSchema]()).withLeft[ResolutionError]) { case (acc, (k, v)) =>
       for {
         last <- acc
-        definition <- resolveSchema(v, baseUri, ctx)
-      } yield last + (k -> definition)
+        schema <- resolveSchema(v, baseUri, ctx)
+      } yield last + (k -> schema)
     }
 
   private def resolveOptSchema(maybeSchema: Option[JsonSchema], baseUri: Uri, ctx: JsonSchema): Either[ResolutionError, Option[JsonSchema]] =
