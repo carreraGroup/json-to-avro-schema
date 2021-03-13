@@ -1,7 +1,7 @@
 package io.carrera.jsontoavroschema
 
 import io.lemonlabs.uri.typesafe.dsl._
-import io.lemonlabs.uri.{AbsoluteUrl, RelativeUrl, Uri}
+import io.lemonlabs.uri.{AbsoluteUrl, EmptyPath, RelativeUrl, RootlessPath, Uri, Url}
 
 object RefResolver {
   def normalizeIds(root: JsonSchema): Either[ResolutionError, JsonSchema] =
@@ -79,7 +79,8 @@ object RefResolver {
     for {
       id <- resolveId(schema.id, baseUri)
       cur = schema.copy(id = id)
-      resolved <- normalizeIds(cur, id.getOrElse(baseUri))
+      newBaseUri = id.getOrElse(baseUri)
+      resolved <- normalizeIds(cur, newBaseUri)
     } yield resolved
 
   private def resolveId(maybeId: Option[Uri], baseUri: Uri): Either[ResolutionError, Option[Uri]] =
@@ -93,7 +94,14 @@ object RefResolver {
 
   private def combineUris(baseUri: Uri, id: Uri) =
     (baseUri, id) match {
-      case (base: AbsoluteUrl, rel: RelativeUrl) => Right(base / rel)
+      case(base: AbsoluteUrl, RelativeUrl(path, _, fragment)) => {
+        path match {
+          case EmptyPath() => Right(base.withFragment(fragment))
+          // withPath replaces the path and makes it relative to the authority
+          case path: RootlessPath => Right(base.withPath(path).withFragment(fragment))
+          case unknown => Left(ResolutionError(s"Unimplemented URI path: $unknown"))
+        }
+      }
       case unknown => Left(ResolutionError(s"Unimplemented URI combination: $unknown"))
     }
 }

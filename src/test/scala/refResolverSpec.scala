@@ -62,6 +62,11 @@ class refResolverSpec extends AnyFlatSpec {
   }
 
   it should "resolve introduce a new namespace at each id" in {
+    /*
+     * If an ID is not a fragment, it introduces a new namespace
+     * as a sibling to the schema root namespace.
+     * https://tools.ietf.org/html/draft-wright-json-schema-01#section-9
+     */
     val root = JsonSchema.empty.copy(
       id = schemaUriOption,
       definitions = Map(
@@ -79,9 +84,9 @@ class refResolverSpec extends AnyFlatSpec {
     val expected = root.copy(
       definitions = root.definitions + ("A" ->
         JsonSchema.empty.copy(
-          id = Uri.parseOption("http://example.com/schemaName/foo"),
+          id = Uri.parseOption("http://example.com/foo"),
           definitions = Map(
-            "B" -> JsonSchema.empty.copy(id = Uri.parseOption("http://example.com/schemaName/foo#bar"))
+            "B" -> JsonSchema.empty.copy(id = Uri.parseOption("http://example.com/foo#bar"))
           )
         ))
     )
@@ -94,7 +99,7 @@ class refResolverSpec extends AnyFlatSpec {
       additionalItems = Some(JsonSchema.empty.copy(
         id = Uri.parseOption("foo/bar"),
         additionalItems = Some(JsonSchema.empty.copy(
-          id = Uri.parseOption("baz")
+          id = Uri.parseOption("#baz")
         ))
       ))
     )
@@ -103,9 +108,9 @@ class refResolverSpec extends AnyFlatSpec {
 
     val expected = root.copy(
       additionalItems = Some(JsonSchema.empty.copy(
-        Uri.parseOption("http://example.com/schemaName/foo/bar"),
+        Uri.parseOption("http://example.com/foo/bar"),
         additionalItems = Some(JsonSchema.empty.copy(
-          id = Uri.parseOption("http://example.com/schemaName/foo/bar/baz")
+          id = Uri.parseOption("http://example.com/foo/bar#baz")
         ))
       ))
     )
@@ -118,7 +123,7 @@ class refResolverSpec extends AnyFlatSpec {
       contains = Some(JsonSchema.empty.copy(
         id = Uri.parseOption("foo/bar"),
         contains = Some(JsonSchema.empty.copy(
-          id = Uri.parseOption("baz")
+          id = Uri.parseOption("#baz")
         ))
       ))
     )
@@ -127,9 +132,9 @@ class refResolverSpec extends AnyFlatSpec {
 
     val expected = root.copy(
       contains = Some(JsonSchema.empty.copy(
-        Uri.parseOption("http://example.com/schemaName/foo/bar"),
+        Uri.parseOption("http://example.com/foo/bar"),
         contains = Some(JsonSchema.empty.copy(
-          id = Uri.parseOption("http://example.com/schemaName/foo/bar/baz")
+          id = Uri.parseOption("http://example.com/foo/bar#baz")
         ))
       ))
     )
@@ -154,9 +159,9 @@ class refResolverSpec extends AnyFlatSpec {
     val expected = root.copy(
       properties = root.definitions + ("A" ->
         JsonSchema.empty.copy(
-          id = Uri.parseOption("http://example.com/schemaName/foo"),
+          id = Uri.parseOption("http://example.com/foo"),
           definitions = Map(
-            "B" -> JsonSchema.empty.copy(id = Uri.parseOption("http://example.com/schemaName/foo#bar"))
+            "B" -> JsonSchema.empty.copy(id = Uri.parseOption("http://example.com/foo#bar"))
           )
         ))
     )
@@ -181,9 +186,9 @@ class refResolverSpec extends AnyFlatSpec {
     val expected = root.copy(
       patternProperties = root.definitions + ("A" ->
         JsonSchema.empty.copy(
-          id = Uri.parseOption("http://example.com/schemaName/foo"),
+          id = Uri.parseOption("http://example.com/foo"),
           properties = Map(
-            "B" -> JsonSchema.empty.copy(id = Uri.parseOption("http://example.com/schemaName/foo#bar"))
+            "B" -> JsonSchema.empty.copy(id = Uri.parseOption("http://example.com/foo#bar"))
           )
         ))
     )
