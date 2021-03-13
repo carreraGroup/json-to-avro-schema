@@ -212,7 +212,7 @@ class refResolverSpec extends AnyFlatSpec {
     result should be(expected)
   }
 
-  ignore should "visit dependencies" in {
+  it should "visit dependencies" in {
     val root = JsonSchema.empty.copy(
       id = schemaUriOption,
       dependencies = Map("a" ->

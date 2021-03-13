@@ -18,14 +18,29 @@ object RefResolver {
       properties <- resolveSchemaMap(schema.properties, baseUri, schema)
       patternProps <- resolveSchemaMap(schema.patternProperties, baseUri, schema)
       additionalProps <- resolveOptSchema(schema.additionalProperties, baseUri, schema)
+      deps <- resolveDependencies(schema.dependencies, baseUri, schema)
     } yield schema.copy(
       definitions = definitions,
       additionalItems = additionalItems,
       contains = contains,
       properties = properties,
       patternProperties = patternProps,
-      additionalProperties = additionalProps
+      additionalProperties = additionalProps,
+      dependencies = deps,
     )
+
+  private def resolveDependencies(deps: Map[String, Either[Seq[String], JsonSchema]], baseUri: Uri, ctx: JsonSchema): Either[ResolutionError,  Map[String, Either[Seq[String], JsonSchema]]] =
+    deps.foldLeft(Right(Map[String, Either[Seq[String], JsonSchema]]()).withLeft[ResolutionError]) { case (acc, (k, v)) =>
+      for {
+        last <- acc
+        dep <- v match {
+          case Left(propNames) => Right(Left(propNames))
+          case Right(schema) => for {
+            resolved <- resolveSchema(schema, baseUri, ctx)
+          } yield Right(resolved)
+        }
+      } yield last + (k -> dep)
+    }
 
   private def resolveSchemaMap(schemaMap: Map[String, JsonSchema], baseUri: Uri, ctx: JsonSchema) =
     schemaMap.foldLeft(Right(Map[String, JsonSchema]()).withLeft[ResolutionError]) { case (acc, (k, v)) =>
