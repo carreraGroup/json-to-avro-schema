@@ -13,15 +13,13 @@ object RefResolver {
   private def normalizeIds(schema: JsonSchema, baseUri: Uri): Either[ResolutionError, JsonSchema] =
     for {
       definitions <- definitions(schema.definitions, baseUri, schema)
-      additionalItems <- additionalItems(schema.additionalItems, baseUri, schema)
-    } yield schema.copy(definitions = definitions, additionalItems = additionalItems)
-
-  private def additionalItems(maybeSchema: Option[JsonSchema], baseUri: Uri, ctx: JsonSchema) =
-    maybeSchema match {
-      case None => Right(None)
-      case Some(schema) =>
-        resolveSchema(schema, baseUri, ctx).map(Some(_))
-    }
+      additionalItems <- resolveOptSchema(schema.additionalItems, baseUri, schema)
+      contains <- resolveOptSchema(schema.contains, baseUri, schema)
+    } yield schema.copy(
+      definitions = definitions,
+      additionalItems = additionalItems,
+      contains = contains
+    )
 
   private def definitions(definitions: Map[String, JsonSchema], baseUri: Uri, ctx: JsonSchema) =
     definitions.foldLeft(Right(Map[String, JsonSchema]()).withLeft[ResolutionError]) { case (acc, (k, v)) =>
@@ -29,6 +27,13 @@ object RefResolver {
         last <- acc
         definition <- resolveSchema(v, baseUri, ctx)
       } yield last + (k -> definition)
+    }
+
+  private def resolveOptSchema(maybeSchema: Option[JsonSchema], baseUri: Uri, ctx: JsonSchema): Either[ResolutionError, Option[JsonSchema]] =
+    maybeSchema match {
+      case None => Right(None)
+      case Some(schema) =>
+        resolveSchema(schema, baseUri, ctx).map(Some(_))
     }
 
   private def resolveSchema(schema: JsonSchema, baseUri: Uri, ctx: JsonSchema): Either[ResolutionError, JsonSchema] =
