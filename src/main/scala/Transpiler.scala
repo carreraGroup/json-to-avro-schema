@@ -14,7 +14,12 @@ object Transpiler {
   def transpile(schema: JsonSchema, namespace: Option[String]): Either[TranspileError, AvroRecord] = {
     for {
       name <- schema.id.map(toName).toRight(TranspileError("$id must be specified in root schema"))
-      record <- transpile(schema, namespace, name)
+      normalized <- IdNormalizer.normalizeIds(schema).left.map(err => TranspileError("Failed to normalize IDs", err))
+      //TODO: resolve reference table of canonical & id
+      // symbols <- resolveSymbols(schema)
+      // schema <- resolveReferences(schema, symbols)
+      // TODO: use namespaces from normalized IDs
+      record <- transpile(normalized, namespace, name)
     } yield record
   }
 
@@ -59,7 +64,7 @@ object Transpiler {
      * https://tools.ietf.org/html/draft-wright-json-schema-01#section-8
      */
     schema.ref match {
-      case Some(uri) => resolveRefUri(uri)
+      case Some(uri) => resolveRefUri(uri) //FIXME: get id if available
       case None =>
         schema.types match {
           case Nil =>
@@ -96,18 +101,11 @@ object Transpiler {
           case x :: xs => Left(TranspileError(s"Unimplemented: index by index array validation isn't supported yet at $propName"))
         }
       case JsonSchemaObject =>
-        schema.id match {
-          //how might we simply call transpile and be done?
-          case Some(_) => transpile(schema, None)
-          case None =>
-            //TODO: additional props only apply to props not present in properties
-            // they're accumulative, not exclusive
-            schema.additionalProperties match {
-              case None => Left(TranspileError(s"object without a type at $propName"))
-              case Some(additionalProps) => for {
-                valueType <- resolveType(propName, additionalProps)
-              } yield AvroMap(valueType)
-            }
+        schema.additionalProperties match {
+          case None => Left(TranspileError(s"object without a type at $propName"))
+          case Some(additionalProps) => for {
+            valueType <- resolveType(propName, additionalProps)
+          } yield AvroMap(valueType)
         }
     }
 
