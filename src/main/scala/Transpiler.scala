@@ -1,6 +1,8 @@
 package io.carrera.jsontoavroschema
 
-import io.lemonlabs.uri.{RelativeUrl, Uri}
+import SymbolResolver.Symbols
+
+import io.lemonlabs.uri.{AbsoluteUrl, RelativeUrl, Uri}
 
 import scala.util.chaining.scalaUtilChainingOps
 
@@ -15,37 +17,34 @@ object Transpiler {
     for {
       name <- schema.id.map(toName).toRight(TranspileError("$id must be specified in root schema"))
       normalized <- IdNormalizer.normalizeIds(schema).left.map(err => TranspileError("Failed to normalize IDs", err))
-      //TODO: resolve reference table of canonical & id
-      // symbols <- resolveSymbols(schema)
-      // schema <- resolveReferences(schema, symbols)
-      // TODO: use namespaces from normalized IDs
-      record <- transpile(normalized, namespace, name)
+      symbols = SymbolResolver.resolve(normalized)
+      record <- transpile(normalized, namespace, name, symbols)
     } yield record
   }
 
-  private def transpile(schema: JsonSchema, namespace: Option[String], name: String): Either[TranspileError, AvroRecord] = {
+  private def transpile(schema: JsonSchema, namespace: Option[String], name: String, symbols: Symbols): Either[TranspileError, AvroRecord] = {
     for {
-      fields <- resolveFields(schema)
+      fields <- resolveFields(schema, symbols)
     } yield AvroRecord(name, namespace, schema.desc, fields)
   }
 
   private def toName(id: Uri) =
     id.path.parts.last
 
-  private def resolveFields(schema: JsonSchema):Either[TranspileError, Seq[AvroField]] =
+  private def resolveFields(schema: JsonSchema, symbols: Symbols):Either[TranspileError, Seq[AvroField]] =
     schema.properties.foldLeft(Right(Seq[AvroField]()).withLeft[TranspileError]) { case (acc, (name, prop)) =>
         for {
           last <- acc
-          field <- resolveField(name, prop, schema)
+          field <- resolveField(name, prop, schema, symbols)
         } yield last :+ field
     }
 
-  private def resolveField(name: String, prop: JsonSchema, schema: JsonSchema) =
+  private def resolveField(name: String, prop: JsonSchema, schema: JsonSchema, symbols: Symbols) =
     for {
       typeAndDefault <-
         if (prop.properties.isEmpty)
           for {
-            t <- resolveType(name, prop)
+            t <- resolveType(name, prop, symbols)
             (avroType, default) =
             if (schema.required.contains(name))
               (t, None)
@@ -54,17 +53,17 @@ object Transpiler {
           } yield (avroType, default)
         else
           for {
-            record <- transpile(prop, None, prop.id.map(toName).getOrElse(name))
+            record <- transpile(prop, None, prop.id.map(toName).getOrElse(name), symbols)
           } yield (record, None)
     } yield AvroField(name, prop.desc, typeAndDefault._1, typeAndDefault._2, None /* TODO: order */)
 
-  private def resolveType(propName: String, schema: JsonSchema): Either[TranspileError, AvroType] = {
+  private def resolveType(propName: String, schema: JsonSchema, symbols: Symbols): Either[TranspileError, AvroType] = {
     /*
      * according to the spec, all other properties MUST be ignored if a ref is present
      * https://tools.ietf.org/html/draft-wright-json-schema-01#section-8
      */
     schema.ref match {
-      case Some(uri) => resolveRefUri(uri) //FIXME: get id if available
+      case Some(uri) => resolveRefUri(uri, symbols)
       case None =>
         schema.types match {
           case Nil =>
@@ -73,18 +72,18 @@ object Transpiler {
               case Nil => Right(AvroBytes)
               case xs => resolveEnum(propName, xs)
             }
-          case x :: Nil => resolveType(propName, schema, x)
+          case x :: Nil => resolveType(propName, schema, x, symbols)
           case xs => xs.foldLeft(Right(Seq[AvroType]()).withLeft[TranspileError]) { case (acc, cur) =>
             for {
               last <- acc
-              t <- resolveType(propName, schema, cur)
+              t <- resolveType(propName, schema, cur, symbols)
             } yield last :+ t
           }.map(types => AvroUnion(types))
         }
     }
   }
 
-  private def resolveType(propName: String, schema: JsonSchema, jsonSchemaType: JsonSchemaType): Either[TranspileError, AvroType] =
+  private def resolveType(propName: String, schema: JsonSchema, jsonSchemaType: JsonSchemaType, symbols: Symbols): Either[TranspileError, AvroType] =
     jsonSchemaType match {
       case JsonSchemaString => Right(AvroString)
       case JsonSchemaNumber => Right(AvroDouble)
@@ -96,7 +95,7 @@ object Transpiler {
           case Nil => Right(AvroArray(AvroBytes))
           case x :: Nil =>
             for {
-              itemType <- resolveType(propName, x)
+              itemType <- resolveType(propName, x, symbols)
             } yield AvroArray(itemType)
           case x :: xs => Left(TranspileError(s"Unimplemented: index by index array validation isn't supported yet at $propName"))
         }
@@ -104,7 +103,7 @@ object Transpiler {
         schema.additionalProperties match {
           case None => Left(TranspileError(s"object without a type at $propName"))
           case Some(additionalProps) => for {
-            valueType <- resolveType(propName, additionalProps)
+            valueType <- resolveType(propName, additionalProps, symbols)
           } yield AvroMap(valueType)
         }
     }
@@ -121,16 +120,16 @@ object Transpiler {
     } /* json schema enums don't have names, so we build one from it's parent property */
       .map(values => AvroEnum(s"${propName}Enum", values))
 
-  private def resolveRefUri(uri: Uri): Either[TranspileError, AvroRef] =
-    uri match {
+  private def resolveRefUri(uri: Uri, symbols: Symbols): Either[TranspileError, AvroRef] = {
+    symbols.getOrElse(uri, uri) match {
       case RelativeUrl(_, _, fragment) =>
         fragment
           .toRight(TranspileError("Expected Uri fragment in ref Uri"))
           .map(fragment => fragment.split("/").last)
           .map(AvroRef)
+      case AbsoluteUrl(_,_,path,_,_) =>
+        path.parts.last.pipe(AvroRef).pipe(Right.apply)
       case unknown => Left(TranspileError(s"Unimplemented ref URI type for: $unknown"))
     }
+  }
 }
-
-final case class TranspileError(message: String = "", cause: Throwable = None.orNull)
-  extends Exception(message, cause)

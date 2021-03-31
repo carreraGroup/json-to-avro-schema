@@ -105,6 +105,3 @@ object IdNormalizer {
       case unknown => Left(ResolutionError(s"Unimplemented URI combination: $unknown"))
     }
 }
-
-final case class ResolutionError(message: String = "", cause: Throwable = None.orNull)
-  extends Exception(message, cause)

@@ -352,7 +352,7 @@ class TranspilerSpec extends AnyFlatSpec {
     avro should be(expected)
   }
 
-  ignore should "resolve reference id of a record if available" in {
+  it should "resolve reference id of a record if available" in {
     val root = JsonSchema.empty.copy(
       id = schemaUri,
       properties = Map(
