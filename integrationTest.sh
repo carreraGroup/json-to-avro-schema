@@ -12,9 +12,9 @@ done
 if [ ! -f avro-tools-1.10.1.jar ]; then
     echo "avro-tools not found"
     echo "hang on, we're downloading it..."
-    wget https://mirror.jframeworks.com/apache/avro/avro-1.10.1/java/avro-tools-1.10.1.jar
+    wget https://mirror.jframeworks.com/apache/avro/avro-1.10.2/java/avro-tools-1.10.2.jar
 fi
 
 echo
 echo "generating java from generated avsc files"
-java -jar avro-tools-1.10.1.jar compile schema output/*.avsc output/
+java -jar avro-tools-1.10.2.jar compile schema output/*.avsc output/
