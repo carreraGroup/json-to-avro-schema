@@ -4,10 +4,11 @@ import io.lemonlabs.uri.{Uri, Url}
 import io.lemonlabs.uri.typesafe.dsl._
 
 object SymbolResolver {
-  def resolve(schema: JsonSchema): Map[Uri, Uri] =
+  type Symbols = Map[Uri,Uri]
+  def resolve(schema: JsonSchema): Symbols =
     resolve(schema, Url.parse("#"))
 
-  private def resolve(schema: JsonSchema, ctx: Url): Map[Uri,Uri] = {
+  private def resolve(schema: JsonSchema, ctx: Url): Symbols = {
     def newCtx(path: String) =
       Url.parse(s"#${ctx.fragment.get}/$path")
 
