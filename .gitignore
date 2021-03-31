@@ -6,7 +6,7 @@ output
 # unless it's test data
 !src/test/resources/**/*.avsc
 # integrationTest.sh automatically downloads avro-tools if it doesn't exist
-avro-tools-1.10.1.jar
+avro-tools-*.jar
 
 ### Intellij ###
 # gitignore.io has a suggested IntelliJ ignore,

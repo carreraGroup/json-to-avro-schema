@@ -9,12 +9,15 @@ for f in src/test/resources/integration-tests/*.json; do
     java -jar target/scala-2.13/json-to-avro-schema-assembly-0.1.jar $f > output/$output_name
 done
 
-if [ ! -f avro-tools-1.10.1.jar ]; then
+avro_tools_version='1.10.2'
+avro_tools="avro-tools-$avro_tools_version.jar"
+
+if [ ! -f $avro_tools ]; then
     echo "avro-tools not found"
     echo "hang on, we're downloading it..."
-    wget https://mirror.jframeworks.com/apache/avro/avro-1.10.2/java/avro-tools-1.10.2.jar
+    wget https://mirror.jframeworks.com/apache/avro/avro-$avro_tools_version/java/$avro_tools
 fi
 
 echo
 echo "generating java from generated avsc files"
-java -jar avro-tools-1.10.2.jar compile schema output/*.avsc output/
+java -jar $avro_tools compile schema output/*.avsc output/
