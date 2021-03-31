@@ -86,6 +86,32 @@ class SymbolResolverSpec extends AnyFlatSpec {
     id should be("#/definitions/B/definitions/X".toUrl)
   }
 
+  it should "visit properties" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUriOption,
+      properties = Map(
+        "A" -> JsonSchema.empty.copy(
+          id = Uri.parseOption("http://example.com/foo"),
+          definitions = Map(
+            "B" -> JsonSchema.empty.copy(
+              id = Uri.parseOption("http://example.com/foo#bar")
+            )
+          )
+        )
+      )
+    )
+
+    val result = SymbolResolver.resolve(root)
+
+    val Some(canonical) = result.get("#/properties/A/definitions/B")
+    val expectedId = "http://example.com/foo#bar"
+
+    canonical should be(expectedId.toUrl)
+
+    val Some(id) = result.get(expectedId)
+    id should be("#/properties/A/definitions/B".toUrl)
+  }
+
   ignore should "visit all other schemas" in {
     fail("IdNormalizer has a list of all nodes that may contain schemas")
   }

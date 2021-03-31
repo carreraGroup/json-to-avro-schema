@@ -7,15 +7,19 @@ object SymbolResolver {
   def resolve(schema: JsonSchema): Map[Uri, Uri] =
     resolve(schema, Url.parse("#"))
 
-  private def resolve(schema: JsonSchema, ctx: Url): Map[Uri,Uri] =
-    definitions(schema.definitions, ctx)
+  private def resolve(schema: JsonSchema, ctx: Url): Map[Uri,Uri] = {
+    def newCtx(path: String) =
+      Url.parse(s"#${ctx.fragment.get}/$path")
 
-  private def definitions(defs: Map[String, JsonSchema], ctx: Url) = {
-    val newCtx = s"#${ctx.fragment.get}/definitions"
+    resolveSchemas(schema.definitions, newCtx("definitions")) ++
+      resolveSchemas(schema.properties, newCtx("properties"))
+  }
+
+  private def resolveSchemas(schemas: Map[String, JsonSchema], ctx: Url) = {
     val resolved =
-      defs.flatMap { case (name, definition) =>
-        val canonical = Uri.parse(s"$newCtx/$name")
-        definition.id.map(id => (canonical, id))
+      schemas.flatMap { case (name, schema) =>
+        val canonical = Uri.parse(s"$ctx/$name")
+        schema.id.map(id => (canonical, id))
       }
 
     val plusFlipped =
@@ -23,9 +27,8 @@ object SymbolResolver {
         (id, canonical)
       }
 
-    plusFlipped ++ defs.flatMap { case (name, schema) =>
-      resolve(schema, Url.parse(s"$newCtx/$name"))
+    plusFlipped ++ schemas.flatMap { case (name, schema) =>
+      resolve(schema, Url.parse(s"$ctx/$name"))
     }
   }
-
 }
