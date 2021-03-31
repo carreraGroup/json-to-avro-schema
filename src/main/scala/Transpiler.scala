@@ -131,6 +131,3 @@ object Transpiler {
       case unknown => Left(TranspileError(s"Unimplemented ref URI type for: $unknown"))
     }
 }
-
-final case class TranspileError(message: String = "", cause: Throwable = None.orNull)
-  extends Exception(message, cause)

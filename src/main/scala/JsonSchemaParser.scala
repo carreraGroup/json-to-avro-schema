@@ -374,6 +374,3 @@ object JsonSchemaParser {
     else
       Right(Map())
 }
-
-final case class ParserError(message: String = "", cause: Throwable = None.orNull)
-  extends Exception(message, cause)
