@@ -376,6 +376,48 @@ class TranspilerSpec extends AnyFlatSpec {
     avro.fields.filter(f => f.name == "B").head.`type` should be(AvroRef("AwesomeSchema"))
   }
 
+  it should "inline first definition reference" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map("A" -> JsonSchema.empty.copy(
+        types = Seq(JsonSchemaInteger)
+      )),
+      properties = Map("B" -> JsonSchema.empty.copy(
+        ref = Uri.parseOption("#/definitions/A")
+      )),
+      required = Seq("B")
+    )
+
+    val Right(avro) = Transpiler.transpile(root, None)
+
+    val expected = AvroRecord("A", None, None, Seq(
+      AvroField("value", None, AvroLong, None, None)
+    ))
+    avro.fields.filter(f => f.name == "B").head.`type` should be(expected)
+  }
+
+  ignore should "reference subsequent definition references by name" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map("A" -> JsonSchema.empty.copy(
+        types = Seq(JsonSchemaInteger)
+      )),
+      properties = Map("B" -> JsonSchema.empty.copy(
+          ref = Uri.parseOption("#/definitions/A")
+        ),
+        "C" -> JsonSchema.empty.copy(
+          ref = Uri.parseOption("#/definitions/A")
+        )
+      ),
+      required = Seq("B","C")
+    )
+
+    val Right(avro) = Transpiler.transpile(root, None)
+
+    val expected = AvroRef("A")
+    avro.fields.filter(f => f.name == "C").head.`type` should be(expected)
+  }
+
   private def schemaUri =
     Uri.parseOption("http://json-schema.org/draft-06/schema#")
 }

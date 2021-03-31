@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "http://example.org/Definitions",
+  "definitions": {
+    "someBool": {
+      "type": "boolean"
+    }
+  },
+  "properties": {
+    "optimize": {
+      "$ref": "#/definitions/someBool"
+    },
+    "warnings": {
+      "$ref": "#/definitions/someBool"
+    }
+  },
+  "required": [
+    "optimize",
+    "warnings"
+  ]
+}

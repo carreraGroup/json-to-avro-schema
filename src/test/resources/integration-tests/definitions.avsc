@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "name": "Definitions",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "optimize",
+      "type": {
+        "name": "someBool",
+        "type": "record",
+        "fields": [
+          {
+            "name": "value",
+            "type": "boolean"
+          }
+        ]
+      }
+    },
+    {
+      "name": "warnings",
+      "type": "someBool"
+    }
+  ]
+}
