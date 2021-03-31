@@ -60,7 +60,7 @@ class SymbolResolverSpec extends AnyFlatSpec {
     result.get("#/definitions/A") should be(None)
   }
 
-  ignore should "visit nested schemas" in {
+  it should "visit nested schemas" in {
     val root = JsonSchema.empty.copy(
       id = schemaUriOption,
       definitions = Map(

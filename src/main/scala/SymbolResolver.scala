@@ -1,16 +1,20 @@
 package io.carrera.jsontoavroschema
 
-import io.lemonlabs.uri.Uri
+import io.lemonlabs.uri.{Uri, Url}
 import io.lemonlabs.uri.typesafe.dsl._
 
 object SymbolResolver {
   def resolve(schema: JsonSchema): Map[Uri, Uri] =
-    definitions(schema.definitions)
+    resolve(schema, Url.parse("#"))
 
-  private def definitions(defs: Map[String, JsonSchema]) = {
+  private def resolve(schema: JsonSchema, ctx: Url): Map[Uri,Uri] =
+    definitions(schema.definitions, ctx)
+
+  private def definitions(defs: Map[String, JsonSchema], ctx: Url) = {
+    val newCtx = s"#${ctx.fragment.get}/definitions"
     val resolved =
       defs.flatMap { case (name, definition) =>
-        val canonical = Uri.parse(s"#/definitions/$name")
+        val canonical = Uri.parse(s"$newCtx/$name")
         definition.id.map(id => (canonical, id))
       }
 
@@ -20,7 +24,7 @@ object SymbolResolver {
       }
 
     plusFlipped ++ defs.flatMap { case (name, schema) =>
-      resolve(schema)
+      resolve(schema, Url.parse(s"$newCtx/$name"))
     }
   }
 
