@@ -6,8 +6,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 
 class IdNormalizerSpec extends AnyFlatSpec {
-  val schemaUri = "http://example.com/schemaName"
-  val schemaUriOption = Uri.parseOption(schemaUri)
+  private val schemaUri = "http://example.com/schemaName"
+  private val schemaUriOption = Uri.parseOption(schemaUri)
 
   it should "error if root does not have an ID" in {
     val Left(err) = IdNormalizer.normalizeIds(JsonSchema.empty)
