@@ -1,9 +1,7 @@
 package io.carrera.jsontoavroschema
 
-import SymbolResolver.{Symbols, resolve}
-
+import SymbolResolver.Symbols
 import io.lemonlabs.uri.{AbsoluteUrl, RelativeUrl, Uri}
-
 import scala.util.chaining.scalaUtilChainingOps
 
 case class Context(parent: JsonSchema, namespace: Option[String], symbols: Symbols)
