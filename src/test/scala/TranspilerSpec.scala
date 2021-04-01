@@ -418,6 +418,38 @@ class TranspilerSpec extends AnyFlatSpec {
     avro.fields.filter(f => f.name == "C").head.`type` should be(expected)
   }
 
+  it should "handle definitions with properties" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map(
+        "A" -> JsonSchema.empty.copy(
+          properties = Map(
+            "name" -> JsonSchema.empty.copy(types = Seq(JsonSchemaString)),
+            "index" -> JsonSchema.empty.copy(types = Seq(JsonSchemaInteger))
+          ),
+          required = Seq("name", "index")
+        )
+      ),
+      properties = Map(
+        "B" -> JsonSchema.empty.copy(
+          ref = Uri.parseOption("#/definitions/A")
+        )
+      ),
+      required = Seq("B")
+    )
+
+    val Right(avro) = Transpiler.transpile(root, None)
+
+    val expected = AvroRecord(
+      "A", None, None,
+      Seq(
+        AvroField("name", None, AvroString, None, None),
+        AvroField("index", None, AvroLong, None, None)
+      )
+    )
+    avro.fields.filter(f => f.name == "B").head.`type` should be(expected)
+  }
+
   private def schemaUri =
     Uri.parseOption("http://json-schema.org/draft-06/schema#")
 }

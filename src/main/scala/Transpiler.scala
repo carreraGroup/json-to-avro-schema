@@ -53,19 +53,26 @@ object Transpiler {
         } yield last :+ field
     }
 
-  private def resolveDefinitions(defs: Map[String, JsonSchema], ctx: Context): Either[TranspileError, Seq[AvroRecord]] =
+  private def resolveDefinitions(defs: Map[String, JsonSchema], ctx: Context): Either[TranspileError, Seq[AvroRecord]] = {
     defs.foldLeft(Right(Seq[AvroRecord]()).withLeft[TranspileError]) { case (acc, (name, definition)) =>
       for {
         last <- acc
-        t <- resolveType(name, definition, ctx)
-        record = AvroRecord(
-          name,
-          None,
-          definition.desc,
-          Seq(AvroField("value", None, t, None, None))
-        )
+        subCtx = Context(definition, None, ctx.symbols)
+        // if we have properties, don't wrap the record in another record
+        fields <-
+          if (definition.properties.nonEmpty)
+            for {
+              fs <- resolveFields(definition.properties, subCtx)
+            } yield fs
+          else {
+            for {
+              t <- resolveType(name, definition, subCtx)
+            } yield Seq(AvroField("value", None, t, None, None))
+          }
+        record = AvroRecord(name, None, definition.desc, fields)
       } yield last :+ record
     }
+  }
 
   private def resolveField(name: String, prop: JsonSchema, ctx: Context) =
     for {
