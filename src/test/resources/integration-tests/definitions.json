@@ -13,7 +13,8 @@
         "someOtherField": {
           "type": "string"
         }
-      }
+      },
+      "required": ["someField", "someOtherField"]
     }
   },
   "properties": {
@@ -22,10 +23,14 @@
     },
     "warnings": {
       "$ref": "#/definitions/someBool"
+    },
+    "applesauce": {
+      "$ref": "#/definitions/someRecord"
     }
   },
   "required": [
     "optimize",
-    "warnings"
+    "warnings",
+    "applesauce"
   ]
 }

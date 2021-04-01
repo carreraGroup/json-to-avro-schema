@@ -19,6 +19,23 @@
     {
       "name": "warnings",
       "type": "someBool"
+    },
+    {
+      "name": "applesauce",
+      "type": {
+        "type": "record",
+        "name": "someRecord",
+        "fields": [
+          {
+            "name": "someField",
+            "type": "long"
+          },
+          {
+            "name": "someOtherField",
+            "type": "string"
+          }
+        ]
+      }
     }
   ]
 }
