@@ -396,7 +396,7 @@ class TranspilerSpec extends AnyFlatSpec {
     avro.fields.filter(f => f.name == "B").head.`type` should be(expected)
   }
 
-  ignore should "reference subsequent definition references by name" in {
+  it should "reference subsequent definition references by name" in {
     val root = JsonSchema.empty.copy(
       id = schemaUri,
       definitions = Map("A" -> JsonSchema.empty.copy(

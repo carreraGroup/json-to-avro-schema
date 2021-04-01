@@ -29,22 +29,17 @@ object Transpiler {
     for {
       fields <- resolveFields(ctx.parent.properties, ctx)
       defs <- resolveDefinitions(ctx.parent.definitions, ctx)
-      // for each def
-      // find the first field that references it
-      // replace the reference with the record
-      //FIXME: now do it just for the first one
-      f = fields.map { f =>
-        f.`type` match {
-          case AvroRef(name) =>
-            defs
-              .find(r => r.name == name)
-              .map(r => f.copy(`type` = r))
-              .getOrElse(f) //maybe we should raise an error instead??
-          case _ => f
-        }
-      }
-      //TODO: replace first occurrence of reference with inlined def
-    } yield AvroRecord(name, ctx.namespace, ctx.parent.desc, f)
+      resolvedFields =
+        defs.foldLeft(fields)(replaceFirstReferenceToDefinition)
+    } yield AvroRecord(name, ctx.namespace, ctx.parent.desc, resolvedFields)
+  }
+
+  private def replaceFirstReferenceToDefinition(fields: Seq[AvroField], definition: AvroRecord) = {
+    val idx = fields.indexWhere(f => f.`type` match {
+      case AvroRef(name) => name == definition.name
+      case _ => false
+    })
+    fields.updated(idx, fields(idx).copy(`type` = definition))
   }
 
   private def toName(id: Uri) =
@@ -65,7 +60,7 @@ object Transpiler {
         t <- resolveType(name, definition, ctx)
         record = AvroRecord(
           name,
-          ctx.namespace,
+          None,
           definition.desc,
           Seq(AvroField("value", None, t, None, None))
         )
