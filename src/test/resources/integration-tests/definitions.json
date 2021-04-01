@@ -4,6 +4,16 @@
   "definitions": {
     "someBool": {
       "type": "boolean"
+    },
+    "someRecord": {
+      "properties": {
+        "someField": {
+          "type": "integer"
+        },
+        "someOtherField": {
+          "type": "string"
+        }
+      }
     }
   },
   "properties": {

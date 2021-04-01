@@ -39,7 +39,11 @@ object Transpiler {
       case AvroRef(name) => name == definition.name
       case _ => false
     })
-    fields.updated(idx, fields(idx).copy(`type` = definition))
+    // this allows for unreferenced definitions
+    if (idx == -1)
+      fields
+    else
+      fields.updated(idx, fields(idx).copy(`type` = definition))
   }
 
   private def toName(id: Uri) =

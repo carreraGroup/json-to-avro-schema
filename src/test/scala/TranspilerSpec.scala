@@ -450,6 +450,28 @@ class TranspilerSpec extends AnyFlatSpec {
     avro.fields.filter(f => f.name == "B").head.`type` should be(expected)
   }
 
+  it should "successfully transpile if a definition is not referenced" in {
+    //there was a bug where we would try to index into the fields
+    //at index -1 if a definition was never referenced
+
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map("A" -> JsonSchema.empty.copy(
+          types = Seq(JsonSchemaInteger)
+        ),
+        "B" -> JsonSchema.empty.copy(
+          types = Seq(JsonSchemaBool)
+        )
+      ),
+      properties = Map("C" -> JsonSchema.empty.copy(
+        ref = Uri.parseOption("#/definitions/A")
+      )),
+      required = Seq("C")
+    )
+
+    val Right(_) = Transpiler.transpile(root, None)
+  }
+
   private def schemaUri =
     Uri.parseOption("http://json-schema.org/draft-06/schema#")
 }
