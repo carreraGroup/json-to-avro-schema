@@ -1,0 +1,45 @@
+{
+  "type": "record",
+  "name": "OneOf",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "foo",
+      "type": ["double", "string"]
+    },
+    {
+      "name": "foobar",
+      "type": ["null", "double", "string"],
+      "default": null
+    },
+    {
+      "name": "bar",
+      "type": {
+        "type": "record",
+        "name": "AA",
+        "fields": [
+          {
+            "name": "value",
+            "type": ["boolean", "long"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "baz",
+      "type": [
+        {
+          "type": "record",
+          "name": "BB",
+          "fields": [
+            {
+              "name": "qux",
+              "type": "string"
+            }
+          ]
+        },
+        "boolean"
+      ]
+    }
+  ]
+}
