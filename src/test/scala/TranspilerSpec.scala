@@ -376,6 +376,102 @@ class TranspilerSpec extends AnyFlatSpec {
     avro.fields.filter(f => f.name == "B").head.`type` should be(AvroRef("AwesomeSchema"))
   }
 
+  it should "inline first definition reference" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map("A" -> JsonSchema.empty.copy(
+        types = Seq(JsonSchemaInteger)
+      )),
+      properties = Map("B" -> JsonSchema.empty.copy(
+        ref = Uri.parseOption("#/definitions/A")
+      )),
+      required = Seq("B")
+    )
+
+    val Right(avro) = Transpiler.transpile(root, None)
+
+    val expected = AvroRecord("A", None, None, Seq(
+      AvroField("value", None, AvroLong, None, None)
+    ))
+    avro.fields.filter(f => f.name == "B").head.`type` should be(expected)
+  }
+
+  it should "reference subsequent definition references by name" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map("A" -> JsonSchema.empty.copy(
+        types = Seq(JsonSchemaInteger)
+      )),
+      properties = Map("B" -> JsonSchema.empty.copy(
+          ref = Uri.parseOption("#/definitions/A")
+        ),
+        "C" -> JsonSchema.empty.copy(
+          ref = Uri.parseOption("#/definitions/A")
+        )
+      ),
+      required = Seq("B","C")
+    )
+
+    val Right(avro) = Transpiler.transpile(root, None)
+
+    val expected = AvroRef("A")
+    avro.fields.filter(f => f.name == "C").head.`type` should be(expected)
+  }
+
+  it should "handle definitions with properties" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map(
+        "A" -> JsonSchema.empty.copy(
+          properties = Map(
+            "name" -> JsonSchema.empty.copy(types = Seq(JsonSchemaString)),
+            "index" -> JsonSchema.empty.copy(types = Seq(JsonSchemaInteger))
+          ),
+          required = Seq("name", "index")
+        )
+      ),
+      properties = Map(
+        "B" -> JsonSchema.empty.copy(
+          ref = Uri.parseOption("#/definitions/A")
+        )
+      ),
+      required = Seq("B")
+    )
+
+    val Right(avro) = Transpiler.transpile(root, None)
+
+    val expected = AvroRecord(
+      "A", None, None,
+      Seq(
+        AvroField("name", None, AvroString, None, None),
+        AvroField("index", None, AvroLong, None, None)
+      )
+    )
+    avro.fields.filter(f => f.name == "B").head.`type` should be(expected)
+  }
+
+  it should "successfully transpile if a definition is not referenced" in {
+    //there was a bug where we would try to index into the fields
+    //at index -1 if a definition was never referenced
+
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map("A" -> JsonSchema.empty.copy(
+          types = Seq(JsonSchemaInteger)
+        ),
+        "B" -> JsonSchema.empty.copy(
+          types = Seq(JsonSchemaBool)
+        )
+      ),
+      properties = Map("C" -> JsonSchema.empty.copy(
+        ref = Uri.parseOption("#/definitions/A")
+      )),
+      required = Seq("C")
+    )
+
+    val Right(_) = Transpiler.transpile(root, None)
+  }
+
   private def schemaUri =
     Uri.parseOption("http://json-schema.org/draft-06/schema#")
 }

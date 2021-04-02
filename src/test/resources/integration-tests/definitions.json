@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "http://example.org/Definitions",
+  "definitions": {
+    "someBool": {
+      "type": "boolean"
+    },
+    "someRecord": {
+      "properties": {
+        "someField": {
+          "type": "integer"
+        },
+        "someOtherField": {
+          "type": "string"
+        }
+      },
+      "required": ["someField", "someOtherField"]
+    }
+  },
+  "properties": {
+    "optimize": {
+      "$ref": "#/definitions/someBool"
+    },
+    "warnings": {
+      "$ref": "#/definitions/someBool"
+    },
+    "applesauce": {
+      "$ref": "#/definitions/someRecord"
+    }
+  },
+  "required": [
+    "optimize",
+    "warnings",
+    "applesauce"
+  ]
+}

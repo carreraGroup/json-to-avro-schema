@@ -1,0 +1,41 @@
+{
+  "type": "record",
+  "name": "Definitions",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "optimize",
+      "type": {
+        "name": "someBool",
+        "type": "record",
+        "fields": [
+          {
+            "name": "value",
+            "type": "boolean"
+          }
+        ]
+      }
+    },
+    {
+      "name": "warnings",
+      "type": "someBool"
+    },
+    {
+      "name": "applesauce",
+      "type": {
+        "type": "record",
+        "name": "someRecord",
+        "fields": [
+          {
+            "name": "someField",
+            "type": "long"
+          },
+          {
+            "name": "someOtherField",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ]
+}
