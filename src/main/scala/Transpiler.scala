@@ -124,6 +124,9 @@ object Transpiler {
     } yield AvroField(name, prop.desc, typeAndDefault._1, typeAndDefault._2, None /* TODO: order */)
 
   private def resolveType(propName: String, schema: JsonSchema, ctx: Context): Either[TranspileError, AvroType] = {
+    def optionalList[T](xs: Seq[T]): Option[Seq[T]] =
+      if (xs.isEmpty) None else Some(xs)
+
     /*
      * according to the spec, all other properties MUST be ignored if a ref is present
      * https://tools.ietf.org/html/draft-wright-json-schema-01#section-8
@@ -131,24 +134,29 @@ object Transpiler {
     schema.ref match {
       case Some(uri) => resolveRefUri(uri, ctx.symbols)
       case None =>
-        //FIXME: these nested matches are getting gnarly
-        schema.types match {
-          case Nil =>
-            /* types and enum aren't really mutually exclusive, but having both makes no sense in avro */
-            schema.`enum` match {
-              case Nil => schema.oneOf match {
-                case Nil => Right(AvroBytes)
-                case xs => resolveOneOf(propName, xs, ctx)
-              }
-              case xs => resolveEnum(propName, xs)
-            }
+        /*
+         types, enum, oneOf, etc. are not actually mutually exclusive.
+         https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-4.4
+         However, JsonSchema also allows you to create schemas that don't make any sense
+         by combining these things together.
+         We treat them as mutually exclusive for simplicity.
+         */
+        optionalList(schema.types) map {
           case x :: Nil => resolveType(propName, schema, x, ctx)
           case xs => xs.foldLeft(Right(Seq[AvroType]()).withLeft[TranspileError]) { case (acc, cur) =>
             for {
               last <- acc
               t <- resolveType(propName, schema, cur, ctx)
             } yield last :+ t
-          }.map(types => AvroUnion(types))
+          }.map(AvroUnion)
+        } orElse {
+          optionalList(schema.`enum`)
+            .map(resolveEnum(propName, _))
+        } orElse {
+          optionalList(schema.oneOf)
+            .map(resolveOneOf(propName, _, ctx))
+        } getOrElse {
+          Right(AvroBytes)
         }
     }
   }
