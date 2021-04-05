@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "http://example.org/OneOf",
+  "definitions": {
+    "AA": {
+      "oneOf": [
+        {"type": "boolean"},
+        {"type": "integer"}
+      ]
+    },
+    "BB": {
+      "properties": {
+        "qux": { "type": "string" }
+      },
+      "required": ["qux"]
+    }
+  },
+  "properties": {
+    "foo": {
+      "oneOf": [
+        {"type": "number"},
+        {"type": "string"}
+      ]
+    },
+    "foobar": {
+      "oneOf": [
+        {"type": "number"},
+        {"type": "string"}
+      ]
+    },
+    "bar": {
+      "$ref": "#/definitions/AA"
+    },
+    "baz": {
+      "oneOf": [
+        { "$ref": "#/definitions/BB" },
+        { "type": "boolean" }
+      ]
+    }
+  },
+  "required": [
+    "foo",
+    "bar",
+    "baz"
+  ]
+}

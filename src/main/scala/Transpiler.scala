@@ -25,7 +25,7 @@ object Transpiler {
 
   private def transpile(name: String, ctx: Context): Either[TranspileError, AvroRecord] = {
     for {
-      fields <- resolveFields(ctx.parent.properties, ctx)
+      fields <- resolveFields(ctx)
       defs <- resolveDefinitions(ctx.parent.definitions, ctx)
       resolvedFields =
         defs.foldLeft(fields)(replaceFirstReferenceToDefinition)
@@ -33,27 +33,54 @@ object Transpiler {
   }
 
   private def replaceFirstReferenceToDefinition(fields: Seq[AvroField], definition: AvroRecord) = {
-    val idx = fields.indexWhere(f => f.`type` match {
+    def isDefRef: PartialFunction[AvroType, Boolean] = {
       case AvroRef(name) => name == definition.name
+      case AvroUnion(types) => types.exists(isDefRef)
       case _ => false
-    })
+    }
+
+    val idx = fields.indexWhere(f => isDefRef(f.`type`))
+
     // this allows for unreferenced definitions
     if (idx == -1)
       fields
-    else
-      fields.updated(idx, fields(idx).copy(`type` = definition))
+    else {
+      val field = fields(idx)
+      val resolvedType =
+        field.`type` match {
+          case AvroUnion(types) => AvroUnion(definition +: types.filterNot(isDefRef))
+          case _ => definition
+        }
+      fields.updated(idx, field.copy(`type` = resolvedType))
+    }
   }
 
   private def toName(id: Uri) =
     id.path.parts.last
 
-  private def resolveFields(schemas: Map[String, JsonSchema], ctx: Context):Either[TranspileError, Seq[AvroField]] =
-    schemas.foldLeft(Right(Seq[AvroField]()).withLeft[TranspileError]) { case (acc, (name, prop)) =>
-        for {
-          last <- acc
-          field <- resolveField(name, prop, ctx)
-        } yield last :+ field
+  private def resolveFields(ctx: Context):Either[TranspileError, Seq[AvroField]] =
+    for {
+      props <- resolveProperties(ctx)
+      oneOf <- resolveOneOfField(ctx)
+    } yield props ++ oneOf
+
+  private def resolveProperties(ctx: Context) =
+    ctx.parent.properties.foldLeft(Right(Seq[AvroField] ()).withLeft[TranspileError]) { case (acc, (name, prop)) =>
+      for {
+        last <- acc
+        field <- resolveField(name, prop, ctx)
+      } yield last :+ field
     }
+
+  private def resolveOneOfField(ctx: Context): Either[TranspileError, Seq[AvroField]] = {
+    val schemas = ctx.parent.oneOf
+    if (schemas.isEmpty)
+      Right(Seq())
+    else
+      for {
+        union <- resolveOneOf("oneOf", schemas, ctx)
+      } yield Seq(AvroField("value", ctx.parent.desc, union, None, None))
+  }
 
   private def resolveDefinitions(defs: Map[String, JsonSchema], ctx: Context): Either[TranspileError, Seq[AvroRecord]] = {
     defs.foldLeft(Right(Seq[AvroRecord]()).withLeft[TranspileError]) { case (acc, (name, definition)) =>
@@ -64,7 +91,7 @@ object Transpiler {
         fields <-
           if (definition.properties.nonEmpty)
             for {
-              fs <- resolveFields(definition.properties, subCtx)
+              fs <- resolveFields(subCtx)
             } yield fs
           else {
             for {
@@ -86,7 +113,7 @@ object Transpiler {
             if (ctx.parent.required.contains(name))
               (t, None)
             else
-              (AvroUnion(Seq(AvroNull, t)), Some(ujson.Null))
+              (AvroUnion(Seq(AvroNull, t)).flatten, Some(ujson.Null))
           } yield (avroType, default)
         else {
           val subCtx = Context(prop, None, ctx.symbols)
@@ -104,11 +131,15 @@ object Transpiler {
     schema.ref match {
       case Some(uri) => resolveRefUri(uri, ctx.symbols)
       case None =>
+        //FIXME: these nested matches are getting gnarly
         schema.types match {
           case Nil =>
             /* types and enum aren't really mutually exclusive, but having both makes no sense in avro */
             schema.`enum` match {
-              case Nil => Right(AvroBytes)
+              case Nil => schema.oneOf match {
+                case Nil => Right(AvroBytes)
+                case xs => resolveOneOf(propName, xs, ctx)
+              }
               case xs => resolveEnum(propName, xs)
             }
           case x :: Nil => resolveType(propName, schema, x, ctx)
@@ -146,6 +177,15 @@ object Transpiler {
           } yield AvroMap(valueType)
         }
     }
+
+  private def resolveOneOf(propName: String, schemas: Seq[JsonSchema], ctx: Context): Either[TranspileError, AvroUnion] = {
+      schemas.foldLeft(Right(Seq[AvroType]()).withLeft[TranspileError]) { case (acc, cur) =>
+        for {
+          last <- acc
+          t <- resolveType(propName, cur, ctx)
+        } yield last :+ t
+      }.map(AvroUnion)
+  }
 
   private def resolveEnum(propName: String, value: Seq[ujson.Value]): Either[TranspileError, AvroEnum] =
     value.foldLeft(Right(Seq[String]()).withLeft[TranspileError]) { case (acc, cur) =>
