@@ -1,27 +1,39 @@
 package io.carrera.jsontoavroschema
 
+import io.carrera.jsontoavroschema.Thing.JSchema
 import io.lemonlabs.uri.{Uri, Url}
 import io.lemonlabs.uri.typesafe.dsl._
 
 object SymbolResolver {
   type Symbols = Map[Uri,Uri]
-  def resolve(schema: JsonSchema): Symbols =
+  def resolve(schema: JSchema): Symbols =
     resolve(schema, Url.parse("#"))
 
-  private def resolve(schema: JsonSchema, ctx: Url): Symbols = {
-    def newCtx(path: String) =
-      Url.parse(s"#${ctx.fragment.get}/$path")
+  private def resolve(schema: JSchema, ctx: Url): Symbols = {
+    schema match {
+      case Left(_) => Map()
+      case Right(schema) => {
+        def newCtx(path: String) =
+          Url.parse(s"#${ctx.fragment.get}/$path")
 
-    resolveSchemas(schema.definitions, newCtx("definitions")) ++
-      resolveSchemas(schema.properties, newCtx("properties"))
+        resolveSchemas(schema.definitions, newCtx("definitions")) ++
+          resolveSchemas(schema.properties, newCtx("properties"))
+      }
+    }
   }
 
-  private def resolveSchemas(schemas: Map[String, JsonSchema], ctx: Url) = {
-    val resolved =
+  private def resolveSchemas(schemas: Map[String, JSchema], ctx: Url): Symbols = {
+    val resolved = {
       schemas.flatMap { case (name, schema) =>
-        val canonical = Uri.parse(s"$ctx/$name")
-        schema.id.map(id => (canonical, id))
+        schema match {
+          case Left(bool) => Map()
+          case Right(schema) => {
+            val canonical = Uri.parse(s"$ctx/$name")
+            schema.id.map(id => (canonical, id))
+          }
+        }
       }
+    }
 
     val plusFlipped =
       resolved ++ resolved.map{ case (canonical, id) =>

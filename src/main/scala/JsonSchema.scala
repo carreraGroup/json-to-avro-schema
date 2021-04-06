@@ -1,6 +1,12 @@
 package io.carrera.jsontoavroschema
 
+import Thing.JSchema
+
 import io.lemonlabs.uri.Uri
+
+package object Thing {
+  type JSchema = Either[Boolean, JsonSchema]
+}
 
 sealed trait JsonSchemaType
 
@@ -12,14 +18,14 @@ case object JsonSchemaString extends JsonSchemaType
 case object JsonSchemaArray extends JsonSchemaType
 case object JsonSchemaObject extends JsonSchemaType
 
-case class RootJsonSchema(schemaUri: Option[Uri], schema: JsonSchema)
+case class RootJsonSchema(schemaUri: Option[Uri], schema: JSchema)
 
 case class JsonSchema(
                        id: Option[Uri],
                        ref: Option[Uri],
                        title: Option[String],
                        desc: Option[String],
-                       definitions: Map[String, JsonSchema],
+                       definitions: Map[String, JSchema],
                        default: Option[ujson.Value],
                        multipleOf: Option[Double],
                        maximum: Option[Double],
@@ -29,28 +35,28 @@ case class JsonSchema(
                        maxLength: Option[Int],
                        minLength: Int,
                        pattern: Option[String],
-                       items: Seq[JsonSchema],
-                       additionalItems: Option[JsonSchema],
+                       items: Seq[JSchema],
+                       additionalItems: Option[JSchema],
                        maxItems: Option[Int],
                        minItems: Int,
                        uniqueItems: Boolean,
-                       contains: Option[JsonSchema],
+                       contains: Option[JSchema],
                        maxProperties: Option[Int],
                        minProperties: Int,
                        required: Seq[String],
-                       properties: Map[String, JsonSchema],
-                       patternProperties: Map[String, JsonSchema],
-                       additionalProperties: Option[JsonSchema],
-                       dependencies: Map[String, Either[Seq[String], JsonSchema]],
-                       propertyNames: Option[JsonSchema],
+                       properties: Map[String, JSchema],
+                       patternProperties: Map[String, JSchema],
+                       additionalProperties: Option[JSchema],
+                       dependencies: Map[String, Either[Seq[String], JSchema]],
+                       propertyNames: Option[JSchema],
                        const: Option[ujson.Value],
                        types: Seq[JsonSchemaType],
                        enum: Seq[ujson.Value],
                        format: Option[String],
-                       allOf: Seq[JsonSchema],
-                       anyOf: Seq[JsonSchema],
-                       oneOf: Seq[JsonSchema],
-                       not: Option[JsonSchema],
+                       allOf: Seq[JSchema],
+                       anyOf: Seq[JSchema],
+                       oneOf: Seq[JSchema],
+                       not: Option[JSchema],
                      )
 
 object JsonSchema {

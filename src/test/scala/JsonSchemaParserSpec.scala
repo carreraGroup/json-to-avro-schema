@@ -36,7 +36,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "$id" -> "http://example.com/schema#"
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(id) = root.schema.id
+    val Right(schema) = root.schema
+    val Some(id) = schema.id
     id should be(Uri.parse("http://example.com/schema#"))
   }
 
@@ -46,7 +47,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     )
 
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(id) = root.schema.id
+    val Right(schema) = root.schema
+    val Some(id) = schema.id
     id should be(Uri.parse("urn:uuid:ee564b8a-7a87-4125-8c96-e9f123d6766f"))
   }
 
@@ -58,7 +60,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "$ref" -> "#foo"
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(id) = root.schema.ref
+    val Right(schema) = root.schema
+    val Some(id) = schema.ref
     id should be(Uri.parse("#foo"))
   }
 
@@ -67,7 +70,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "title" -> "My awesome schema"
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(title) = root.schema.title
+    val Right(schema) = root.schema
+    val Some(title) = schema.title
     title should be("My awesome schema")
   }
 
@@ -84,15 +88,17 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "description" -> "this is a pretty useless schema"
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(desc) = root.schema.desc
+    val Right(schema) = root.schema
+    val Some(desc) = schema.desc
     desc should be("this is a pretty useless schema")
   }
 
   it should "parse default" in {
     val input = ujson.Obj("default" -> ujson.Bool(true))
     val Right(root) = JsonSchemaParser.parse(input)
+    val Right(schema) = root.schema
     // can be any ujson.Value
-    val Some(default) = root.schema.default
+    val Some(default) = schema.default
     default should be(ujson.Bool(true))
   }
 
@@ -110,7 +116,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     )
 
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(multipleOf) = root.schema.multipleOf
+    val Right(schema) = root.schema
+    val Some(multipleOf) = schema.multipleOf
     multipleOf should be(2)
   }
 
@@ -129,7 +136,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     )
 
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(max) = root.schema.maximum
+    val Right(schema) = root.schema
+    val Some(max) = schema.maximum
     max should be(3)
   }
 
@@ -139,7 +147,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     )
 
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(max) = root.schema.exclusiveMaximum
+    val Right(schema) = root.schema
+    val Some(max) = schema.exclusiveMaximum
     max should be(4)
   }
 
@@ -148,7 +157,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "minimum" -> 5
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(min) = root.schema.minimum
+    val Right(schema) = root.schema
+    val Some(min) = schema.minimum
     min should be(5)
   }
 
@@ -157,7 +167,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "exclusiveMinimum" -> 6
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(exclMin) = root.schema.exclusiveMinimum
+    val Right(schema) = root.schema
+    val Some(exclMin) = schema.exclusiveMinimum
     exclMin should be(6)
   }
 
@@ -166,7 +177,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "maxLength" -> 0
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(len) = root.schema.maxLength
+    val Right(schema) = root.schema
+    val Some(len) = schema.maxLength
     len should be(0)
   }
 
@@ -183,7 +195,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "maxLength" -> 1
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.minLength should be(0)
+    val Right(schema) = root.schema
+    schema.minLength should be(0)
   }
 
   it should "parse minLength" in {
@@ -191,7 +204,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "minLength" -> 1
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.minLength should be(1)
+    val Right(schema) = root.schema
+    schema.minLength should be(1)
   }
 
   it should "fail if minLength < 0" in {
@@ -207,7 +221,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "pattern" -> "^(\\([0-9]{3}\\))?[0-9]{3}-[0-9]{4}$"
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(pattern) = root.schema.pattern
+    val Right(schema) = root.schema
+    val Some(pattern) = schema.pattern
     pattern should be("^(\\([0-9]{3}\\))?[0-9]{3}-[0-9]{4}$")
   }
 
@@ -216,8 +231,10 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "items" -> ujson.Obj("$id" -> "#foo")
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    val items = root.schema.items
-    val Some(innerId) = items.head.id
+    val Right(schema) = root.schema
+    val items = schema.items
+    val Right(firstItem) = items.head
+    val Some(innerId) = firstItem.id
     innerId should be(Uri.parse("#foo"))
   }
 
@@ -229,10 +246,12 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       )
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    val head::tail = root.schema.items
+    val Right(schema) = root.schema
+    val Right(head)::tail = schema.items
     val Some(fooId) = head.id
     fooId should be(Uri.parse("#foo"))
-    val Some(barId) = tail.head.id
+    val Right(secondItem) = tail.head
+    val Some(barId) = secondItem.id
     barId should be(Uri.parse("#bar"))
   }
 
@@ -241,14 +260,16 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "additionalItems" -> ujson.Obj("$id" -> "#foo")
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(additionalItems) = root.schema.additionalItems
+    val Right(schema) = root.schema
+    val Some(Right(additionalItems)) = schema.additionalItems
     additionalItems.id should be(Some(Uri.parse("#foo")))
   }
 
   it should "default items to empty list" in {
     val input = ujson.Obj("$id" -> "#foo")
     val Right(root) = JsonSchemaParser.parse(input)
-    val items = root.schema.items
+    val Right(schema) = root.schema
+    val items = schema.items
     items should be(Seq())
   }
 
@@ -258,9 +279,9 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     err.getMessage should be("items must be an object or array")
   }
 
-  it should "fail if items contains something that isn't an object" in {
+  it should "fail if items contains something that isn't an object or bool" in {
     val input = ujson.Obj(
-      "items" -> ujson.Arr(ujson.Bool(true))
+      "items" -> ujson.Arr(ujson.Str("boom"))
     )
     val Left(err) = JsonSchemaParser.parse(input)
     err.getMessage should be("items array contents must be objects")
@@ -269,27 +290,31 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
   it should "parse maxItems" in {
     val input = ujson.Obj("maxItems" -> 32)
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(maxItems) = root.schema.maxItems
+    val Right(schema) = root.schema
+    val Some(maxItems) = schema.maxItems
     maxItems should be(32)
   }
 
   it should "parse minItems" in {
     val input = ujson.Obj("minItems" -> 22)
     val Right(root) = JsonSchemaParser.parse(input)
-    val minItems = root.schema.minItems
+    val Right(schema) = root.schema
+    val minItems = schema.minItems
     minItems should be(22)
   }
 
   it should "parse uniqueItems" in {
     val input = ujson.Obj("uniqueItems" -> true)
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.uniqueItems should be(true)
+    val Right(schema) = root.schema
+    schema.uniqueItems should be(true)
   }
 
   it should "uniqueItems defaults to false" in {
     val input = ujson.Obj("$id" -> "#foo")
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.uniqueItems should be(false)
+    val Right(schema) = root.schema
+    schema.uniqueItems should be(false)
   }
 
   it should "fail if uniqueItems value is not a bool" in {
@@ -304,21 +329,24 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
 
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(contains) = root.schema.contains
+    val Right(schema) = root.schema
+    val Some(contains) = schema.contains
     contains should be(foo)
   }
 
   it should "parse maxProperties" in {
     val input = ujson.Obj("maxProperties" -> 0)
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(maxProps) = root.schema.maxProperties
+    val Right(schema) = root.schema
+    val Some(maxProps) = schema.maxProperties
     maxProps should be(0)
   }
 
   it should "parse minProperties" in {
     val input = ujson.Obj("minProperties" -> 221)
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.minProperties should be(221)
+    val Right(schema) = root.schema
+    schema.minProperties should be(221)
   }
 
   it should "parse required" in {
@@ -326,13 +354,15 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "required" -> ujson.Arr("someProperty", "someOtherProp")
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.required should be(Seq("someProperty", "someOtherProp"))
+    val Right(schema) = root.schema
+    schema.required should be(Seq("someProperty", "someOtherProp"))
   }
 
   it should "default required to empty array" in {
     val input = ujson.Obj("$id" -> "#foo")
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.required should be(Seq())
+    val Right(schema) = root.schema
+    schema.required should be(Seq())
   }
 
   it should "fail if required not an array" in {
@@ -363,14 +393,16 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(expectedBar) = JsonSchemaParser.parseSubSchema(barProp)
 
     val Right(root) = JsonSchemaParser.parse(input)
-    val props = root.schema.properties
+    val Right(schema) = root.schema
+    val props = schema.properties
     props should be(Map("foo" -> expectedFoo, "bar" -> expectedBar))
   }
 
   it should "default properties to empty map" in {
     val input = ujson.Obj("$id" -> "#foo")
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.properties should be(Map())
+    val Right(schema) = root.schema
+    schema.properties should be(Map())
   }
 
   it should "parse patternProperties" in {
@@ -383,7 +415,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
 
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.patternProperties should be(Map("^S_" -> foo))
+    val Right(schema) = root.schema
+    schema.patternProperties should be(Map("^S_" -> foo))
   }
 
   it should "parse additionalProperties" in {
@@ -392,7 +425,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
 
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(additionalProperties) = root.schema.additionalProperties
+    val Right(schema) = root.schema
+    val Some(additionalProperties) = schema.additionalProperties
     additionalProperties should be(foo)
   }
 
@@ -404,7 +438,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
 
     val Right(root) = JsonSchemaParser.parse(input)
-    val deps = root.schema.dependencies
+    val Right(schema) = root.schema
+    val deps = schema.dependencies
     val Right(actual) = deps("foo")
     actual should be(foo)
   }
@@ -416,7 +451,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       )
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    val deps = root.schema.dependencies
+    val Right(schema) = root.schema
+    val deps = schema.dependencies
     val Left(actual) = deps("foo")
     actual should be(Seq("bar","baz","qux"))
   }
@@ -427,7 +463,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
 
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(propertyNames) = root.schema.propertyNames
+    val Right(schema) = root.schema
+    val Some(propertyNames) = schema.propertyNames
     propertyNames should be(foo)
   }
 
@@ -445,7 +482,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(expectedBar) = JsonSchemaParser.parseSubSchema(barProp)
 
     val Right(root) = JsonSchemaParser.parse(input)
-    val props = root.schema.definitions
+    val Right(schema) = root.schema
+    val props = schema.definitions
     props should be(Map("foo" -> expectedFoo, "bar" -> expectedBar))
   }
 
@@ -454,14 +492,16 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(root) = JsonSchemaParser.parse(input)
     // can be any ujson.Value
     // https://tools.ietf.org/html/draft-wright-json-schema-validation-01#section-6.24
-    val Some(const) = root.schema.const
+    val Right(schema) = root.schema
+    val Some(const) = schema.const
     const should be(ujson.Str("hi"))
   }
 
   it should "parse string type" in {
     val input = ujson.Obj("type" -> ujson.Str("string"))
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.types should be(Seq(JsonSchemaString))
+    val Right(schema) = root.schema
+    schema.types should be(Seq(JsonSchemaString))
   }
 
   it should "parse array type" in {
@@ -469,7 +509,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "type" -> ujson.Arr("string", "boolean")
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.types should be(Seq(JsonSchemaString, JsonSchemaBool))
+    val Right(schema) = root.schema
+    schema.types should be(Seq(JsonSchemaString, JsonSchemaBool))
   }
 
   it should "parse enum" in {
@@ -478,13 +519,15 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "enum" -> ujson.Arr(ujson.Str("somevalue"), ujson.Bool(true))
     )
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.enum should be(Seq(ujson.Str("somevalue"), ujson.Bool(true)))
+    val Right(schema) = root.schema
+    schema.enum should be(Seq(ujson.Str("somevalue"), ujson.Bool(true)))
   }
 
   it should "parse format" in {
     val input = ujson.Obj("format" -> ujson.Str("email"))
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(format) = root.schema.format
+    val Right(schema) = root.schema
+    val Some(format) = schema.format
     format should be("email")
   }
 
@@ -496,7 +539,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
 
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.allOf should be(Seq(foo))
+    val Right(schema) = root.schema
+    schema.allOf should be(Seq(foo))
   }
 
   it should "parse anyOf" in {
@@ -507,7 +551,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
 
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.anyOf should be(Seq(foo))
+    val Right(schema) = root.schema
+    schema.anyOf should be(Seq(foo))
   }
 
   it should "parse oneOf" in {
@@ -518,7 +563,8 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
 
     val Right(root) = JsonSchemaParser.parse(input)
-    root.schema.oneOf should be(Seq(foo))
+    val Right(schema) = root.schema
+    schema.oneOf should be(Seq(foo))
   }
 
   it should "parse not" in {
@@ -527,7 +573,16 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
     val Right(foo) = JsonSchemaParser.parseSubSchema(fooSchema)
 
     val Right(root) = JsonSchemaParser.parse(input)
-    val Some(not) = root.schema.not
+    val Right(schema) = root.schema
+    val Some(not) = schema.not
     not should be(foo)
+  }
+
+  it should "parse boolean schemas" in {
+    val input = ujson.Obj("not" -> false)
+    val Right(parseResult) = JsonSchemaParser.parse(input)
+    val Right(root) = parseResult.schema
+    val Some(Left(value)) = root.not
+    value should be(false)
   }
 }

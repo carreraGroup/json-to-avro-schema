@@ -1,5 +1,7 @@
 package io.carrera.jsontoavroschema
 
+import Thing.JSchema
+
 import io.lemonlabs.uri.Uri
 
 import scala.collection.mutable
@@ -20,83 +22,92 @@ object JsonSchemaParser {
    * so this is our recursive descent function
    * that ignores it.
    * */
-  def parseSubSchema(obj: ujson.Obj): Either[ParserError, JsonSchema] =
-    for {
-      id <- parseUriOpt(obj, "$id")
-      ref <- parseUriOpt(obj, "$ref")
-      title <- parseStringOpt(obj, "title")
-      desc <- parseStringOpt(obj, "description")
-      definitions <- parseSchemaMap(obj, "definitions")
-      default <- parseAnyOpt(obj, "default")
-      multipleOf <- parsePositiveNumberOpt(obj, "multipleOf")
-      max <- parseNumberOpt(obj, "maximum")
-      exclMax <- parseNumberOpt(obj, "exclusiveMaximum")
-      min <- parseNumberOpt(obj, "minimum")
-      exclMin <- parseNumberOpt(obj, "exclusiveMinimum")
-      maxLen <- parseNonNegativeIntegerOpt(obj, "maxLength")
-      minLen <- parseNonNegativeIntegerWithDefaultZero(obj, "minLength")
-      pattern <- parsePatternOpt(obj)
-      items <- parseItems(obj)
-      additionalItems <- parseSchemaOpt(obj, "additionalItems")
-      maxItems <- parseNonNegativeIntegerOpt(obj, "maxItems")
-      minItems <- parseNonNegativeIntegerWithDefaultZero(obj, "minItems")
-      uniqueItems <- parseUniqueItems(obj)
-      contains <- parseSchemaOpt(obj, "contains")
-      maxProps <- parseNonNegativeIntegerOpt(obj, "maxProperties")
-      minProps <- parseNonNegativeIntegerWithDefaultZero(obj, "minProperties")
-      required <- parseRequired(obj)
-      properties <- parseSchemaMap(obj, "properties")
-      patternProps <- parsePatternProperties(obj)
-      additionalProps <- parseSchemaOpt(obj, "additionalProperties")
-      deps <- parseDependencies(obj)
-      propNames <- parseSchemaOpt(obj, "propertyNames")
-      const <- parseAnyOpt(obj, "const")
-      types <- parseTypes(obj)
-      enum <- parseEnum(obj)
-      format <- parseStringOpt(obj, "format")
-      allOf <- parseSchemaArray(obj, "allOf")
-      anyOf <- parseSchemaArray(obj, "anyOf")
-      oneOf <- parseSchemaArray(obj, "oneOf")
-      not <- parseSchemaOpt(obj, "not")
-    } yield
-      JsonSchema(
-        id,
-        ref,
-        title,
-        desc,
-        definitions,
-        default,
-        multipleOf,
-        max,
-        exclMax,
-        min,
-        exclMin,
-        maxLen,
-        minLen,
-        pattern,
-        items,
-        additionalItems,
-        maxItems,
-        minItems,
-        uniqueItems,
-        contains,
-        maxProps,
-        minProps,
-        required,
-        properties,
-        patternProps,
-        additionalProps,
-        deps,
-        propNames,
-        const,
-        types,
-        enum,
-        format,
-        allOf,
-        anyOf,
-        oneOf,
-        not,
-      )
+  def parseSubSchema(value: ujson.Value): Either[ParserError, JSchema] = {
+    value match {
+      case ujson.Bool(v) => Right(Left(v))
+      case ujson.Obj(obj) =>
+        for {
+          id <- parseUriOpt(obj, "$id")
+          ref <- parseUriOpt(obj, "$ref")
+          title <- parseStringOpt(obj, "title")
+          desc <- parseStringOpt(obj, "description")
+          definitions <- parseSchemaMap(obj, "definitions")
+          default <- parseAnyOpt(obj, "default")
+          multipleOf <- parsePositiveNumberOpt(obj, "multipleOf")
+          max <- parseNumberOpt(obj, "maximum")
+          exclMax <- parseNumberOpt(obj, "exclusiveMaximum")
+          min <- parseNumberOpt(obj, "minimum")
+          exclMin <- parseNumberOpt(obj, "exclusiveMinimum")
+          maxLen <- parseNonNegativeIntegerOpt(obj, "maxLength")
+          minLen <- parseNonNegativeIntegerWithDefaultZero(obj, "minLength")
+          pattern <- parsePatternOpt(obj)
+          items <- parseItems(obj)
+          additionalItems <- parseSchemaOpt(obj, "additionalItems")
+          maxItems <- parseNonNegativeIntegerOpt(obj, "maxItems")
+          minItems <- parseNonNegativeIntegerWithDefaultZero(obj, "minItems")
+          uniqueItems <- parseUniqueItems(obj)
+          contains <- parseSchemaOpt(obj, "contains")
+          maxProps <- parseNonNegativeIntegerOpt(obj, "maxProperties")
+          minProps <- parseNonNegativeIntegerWithDefaultZero(obj, "minProperties")
+          required <- parseRequired(obj)
+          properties <- parseSchemaMap(obj, "properties")
+          patternProps <- parsePatternProperties(obj)
+          additionalProps <- parseSchemaOpt(obj, "additionalProperties")
+          deps <- parseDependencies(obj)
+          propNames <- parseSchemaOpt(obj, "propertyNames")
+          const <- parseAnyOpt(obj, "const")
+          types <- parseTypes(obj)
+          enum <- parseEnum(obj)
+          format <- parseStringOpt(obj, "format")
+          allOf <- parseSchemaArray(obj, "allOf")
+          anyOf <- parseSchemaArray(obj, "anyOf")
+          oneOf <- parseSchemaArray(obj, "oneOf")
+          not <- parseSchemaOpt(obj, "not")
+        } yield {
+          Right(
+            JsonSchema(
+              id,
+              ref,
+              title,
+              desc,
+              definitions,
+              default,
+              multipleOf,
+              max,
+              exclMax,
+              min,
+              exclMin,
+              maxLen,
+              minLen,
+              pattern,
+              items,
+              additionalItems,
+              maxItems,
+              minItems,
+              uniqueItems,
+              contains,
+              maxProps,
+              minProps,
+              required,
+              properties,
+              patternProps,
+              additionalProps,
+              deps,
+              propNames,
+              const,
+              types,
+              enum,
+              format,
+              allOf,
+              anyOf,
+              oneOf,
+              not,
+            )
+          )
+        }
+      //FIXME: inexhaustive match
+    }
+  }
 
   private def parseItems(value: ujson.Obj) = {
     val elemName = "items"
@@ -114,7 +125,7 @@ object JsonSchemaParser {
 
   private def parseDependencies(obj: ujson.Obj) = {
     val parser = (rawProps: mutable.AbstractMap[String, ujson.Value], elemName: String) => {
-      rawProps.foldLeft(Right(Map[String, Either[Seq[String], JsonSchema]]()).withLeft[ParserError]) { case (acc, (k,v)) =>
+      rawProps.foldLeft(Right(Map[String, Either[Seq[String], JSchema]]()).withLeft[ParserError]) { case (acc, (k,v)) =>
         for {
           last <- acc
           result <- v match {
@@ -133,9 +144,9 @@ object JsonSchemaParser {
     runMapParser(obj, elemName, mapParser(parser)(elemName))
   }
 
-  private def parseSchemaMap(obj: ujson.Obj, elemName: String): Either[ParserError, Map[String,JsonSchema]] = {
+  private def parseSchemaMap(obj: ujson.Obj, elemName: String): Either[ParserError, Map[String,JSchema]] = {
     val parser = (rawProps: mutable.AbstractMap[String, ujson.Value], elemName: String) => {
-      rawProps.foldLeft(Right(Map[String,JsonSchema]()).withLeft[ParserError]) { case (acc, (k, v)) =>
+      rawProps.foldLeft(Right(Map[String,JSchema]()).withLeft[ParserError]) { case (acc, (k, v)) =>
         for {
           last <- acc
           schema <- parseSchema(v, s"$elemName values must be objects")
@@ -223,7 +234,7 @@ object JsonSchemaParser {
     runSeqParser(value, elemName, arrayParser(parseSchemas)(elemName))
 
   private def parseSchemas(items: IterableOnce[ujson.Value], elemName: String) = {
-    items.iterator.foldLeft(Right(Seq[JsonSchema]()).withLeft[ParserError]) { case (acc, cur) =>
+    items.iterator.foldLeft(Right(Seq[JSchema]()).withLeft[ParserError]) { case (acc, cur) =>
       for {
         last <- acc
         schema <- parseSchema(cur, s"$elemName array contents must be objects")
@@ -234,11 +245,16 @@ object JsonSchemaParser {
   private def parseSchemaOpt(obj: ujson.Obj, elemName: String) =
     runOptParser(obj, elemName, optParser(parseSchema))
 
-  private def parseSchema(value: ujson.Value, errMsg: String) =
-    for {
-      obj <- value.objOpt.toRight(ParserError(errMsg))
-      schema <- parseSubSchema(obj)
-    } yield schema
+  private def parseSchema(value: ujson.Value, errMsg: String) = {
+    value match {
+      case ujson.Bool(v) => Right(Left(v))
+      case ujson.Obj(obj) =>
+        for {
+          schema <- parseSubSchema(obj)
+        } yield schema
+      case _ => Left(ParserError(errMsg))
+    }
+  }
 
   private def parsePatternProperties(obj: ujson.Obj) =
     //TODO: verify keys are ECMA 262 regexes
