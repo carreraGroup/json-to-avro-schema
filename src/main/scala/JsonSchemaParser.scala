@@ -105,7 +105,7 @@ object JsonSchemaParser {
             )
           )
         }
-      //FIXME: inexhaustive match
+      case x => Left(ParserError(s"Schema must be either an object or boolean, but found $x"))
     }
   }
 
