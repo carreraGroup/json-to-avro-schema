@@ -552,13 +552,101 @@ class TranspilerSpec extends AnyFlatSpec {
         Seq(AvroField("foo", None,
             AvroUnion(Seq(
               AvroRecord("A", None, None, Seq(AvroField("qux", None, AvroString, None, None))),
-              AvroBool
+              AvroBool,
             )),
             None, None
         ))
       )
 
     avroSchema should be(expectedRecord)
+  }
+
+  it should "inline first referenced definition in an array type" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map(
+        "Reference" -> Right(JsonSchema.empty.copy(
+          properties = Map("id" -> Right(JsonSchema.empty.copy(types = Seq(JsonSchemaString)))),
+          required = Seq("id")
+        ))
+      ),
+      properties = Map(
+        "Account" -> Right(JsonSchema.empty.copy(
+          properties = Map(
+            "subject" -> Right(JsonSchema.empty.copy(
+              items = Seq(Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Reference")))),
+              types = Seq(JsonSchemaArray)
+            ))
+          ),
+          required = Seq("subject")
+        ))
+      )
+    )
+
+    val Right(avroSchema) = Transpiler.transpile(Right(root), None)
+
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(
+          AvroField("Account", None,
+            AvroRecord("Account", None, None, Seq(
+              AvroField("subject", None,
+                AvroArray(
+                  AvroRecord("Reference", None, None, Seq(
+                    AvroField("id", None, AvroString, None, None)
+                  )
+                )
+              ), None, None)
+            ))
+          ,None, None)
+        ))
+
+    avroSchema should equal(expectedRecord)
+  }
+
+  it should "inline first referenced definition in an nested array type" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map(
+        "Reference" -> Right(JsonSchema.empty.copy(
+          properties = Map("id" -> Right(JsonSchema.empty.copy(types = Seq(JsonSchemaString)))),
+          required = Seq("id")
+        )),
+        "Account" -> Right(JsonSchema.empty.copy(
+          properties = Map(
+            "subject" -> Right(JsonSchema.empty.copy(
+              items = Seq(Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Reference")))),
+              types = Seq(JsonSchemaArray)
+            ))
+          ),
+          required = Seq("subject")
+        ))
+      ),
+      oneOf = Seq(
+        Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Account"))),
+        Right(JsonSchema.empty.copy(types = Seq(JsonSchemaString)))
+      )
+    )
+
+    val Right(avroSchema) = Transpiler.transpile(Right(root), None)
+
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(
+        AvroField("value", None,
+          AvroUnion(Seq(
+            AvroRecord("Account", None, None, Seq(
+              AvroField("subject", None,
+                AvroArray(
+                  AvroRecord("Reference", None, None, Seq(
+                    AvroField("id", None, AvroString, None, None)
+                  ))
+                ), None, None)
+            )),
+            AvroString,
+          ))
+          ,None, None)
+      ))
+
+    avroSchema should equal(expectedRecord)
   }
 
   it should "transpile oneOf at root" in {
