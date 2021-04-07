@@ -167,9 +167,13 @@ object Transpiler {
      */
     schema match {
       case Left(bool) =>
-        if (bool)
+        if (bool) {
+          /*
+           * A boolean schema of true allows anything,
+           * so there's not much we can do except say "this is a bag of bytes".
+           */
           Right(AvroBytes)
-        else
+        } else
           Left(TranspileError(s"A false value in $propName ensures there are no valid schemas"))
       case Right(schema) =>
         schema.ref match {
