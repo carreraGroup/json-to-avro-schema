@@ -285,7 +285,7 @@ class JsonSchemaParserSpec extends AnyFlatSpec {
       "items" -> ujson.Arr(ujson.Str("boom"))
     )
     val Left(err) = JsonSchemaParser.parse(input)
-    err.getMessage should be("items array contents must be objects")
+    err.getMessage should be("Expected obj or bool, but got \"boom\": items array contents must be objects")
   }
 
   it should "parse maxItems" in {

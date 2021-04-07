@@ -252,7 +252,7 @@ object JsonSchemaParser {
         for {
           schema <- parseSubSchema(obj)
         } yield schema
-      case _ => Left(ParserError(errMsg))
+      case x => Left(ParserError(s"Expected obj or bool, but got $x: $errMsg"))
     }
   }
 
