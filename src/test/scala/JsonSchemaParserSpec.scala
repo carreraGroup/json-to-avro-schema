@@ -1,5 +1,6 @@
 package io.carrera.jsontoavroschema
 
+import Json._
 import io.lemonlabs.uri.Uri
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._

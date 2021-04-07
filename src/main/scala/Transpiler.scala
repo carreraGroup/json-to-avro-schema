@@ -1,7 +1,7 @@
 package io.carrera.jsontoavroschema
 
 import SymbolResolver.Symbols
-import Thing.JSchema
+import Json._
 
 import io.lemonlabs.uri.{AbsoluteUrl, RelativeUrl, Uri}
 

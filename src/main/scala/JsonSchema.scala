@@ -1,22 +1,8 @@
 package io.carrera.jsontoavroschema
 
-import Thing.JSchema
+import Json.{JSchema, JsonSchemaType}
 
 import io.lemonlabs.uri.Uri
-
-package object Thing {
-  type JSchema = Either[Boolean, JsonSchema]
-}
-
-sealed trait JsonSchemaType
-
-case object JsonSchemaNull extends JsonSchemaType
-case object JsonSchemaBool extends JsonSchemaType
-case object JsonSchemaInteger extends JsonSchemaType
-case object JsonSchemaNumber extends JsonSchemaType
-case object JsonSchemaString extends JsonSchemaType
-case object JsonSchemaArray extends JsonSchemaType
-case object JsonSchemaObject extends JsonSchemaType
 
 case class RootJsonSchema(schemaUri: Option[Uri], schema: JSchema)
 

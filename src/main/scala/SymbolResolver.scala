@@ -1,6 +1,6 @@
 package io.carrera.jsontoavroschema
 
-import io.carrera.jsontoavroschema.Thing.JSchema
+import Json._
 import io.lemonlabs.uri.{Uri, Url}
 import io.lemonlabs.uri.typesafe.dsl._
 
