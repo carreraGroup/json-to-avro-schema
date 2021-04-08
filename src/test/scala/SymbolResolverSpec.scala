@@ -25,20 +25,24 @@ class SymbolResolverSpec extends AnyFlatSpec {
    */
 
   it should "return a symbol table given an empty schema" in {
-    SymbolResolver.resolve(JsonSchema.empty) should be(Map())
+    SymbolResolver.resolve(Right(JsonSchema.empty)) should be(Map())
+  }
+
+  it should "return a symbol table given boolean schema" in {
+    SymbolResolver.resolve(Left(false)) should be(Map())
   }
 
   it should "given definitions contain canonical and id" in {
     val root = JsonSchema.empty.copy(
       id = schemaUriOption,
       definitions = Map(
-        "A" -> JsonSchema.empty.copy(
+        "A" -> Right(JsonSchema.empty.copy(
           id = Some(s"$schemaUri#foo")
-        )
+        ))
       )
     )
 
-    val result = SymbolResolver.resolve(root)
+    val result = SymbolResolver.resolve(Right(root))
     val Some(canonical) = result.get("#/definitions/A")
     val expectedId = s"$schemaUri#foo"
 
@@ -52,11 +56,11 @@ class SymbolResolverSpec extends AnyFlatSpec {
     val root = JsonSchema.empty.copy(
       id = schemaUriOption,
       definitions = Map(
-        "A" -> JsonSchema.empty
+        "A" -> Right(JsonSchema.empty)
       )
     )
 
-    val result = SymbolResolver.resolve(root)
+    val result = SymbolResolver.resolve(Right(root))
     result.get("#/definitions/A") should be(None)
   }
 
@@ -64,18 +68,18 @@ class SymbolResolverSpec extends AnyFlatSpec {
     val root = JsonSchema.empty.copy(
       id = schemaUriOption,
       definitions = Map(
-        "B" -> JsonSchema.empty.copy(
+        "B" -> Right(JsonSchema.empty.copy(
           id = Some(s"$schemaUri#foo"),
           definitions = Map(
-            "X" -> JsonSchema.empty.copy(
+            "X" -> Right(JsonSchema.empty.copy(
               id = Some("http://example.com/other.json#bar")
-            )
+            ))
           )
-        )
+        ))
       )
     )
 
-    val result = SymbolResolver.resolve(root)
+    val result = SymbolResolver.resolve(Right(root))
 
     val Some(canonical) = result.get("#/definitions/B/definitions/X")
     val expectedId = "http://example.com/other.json#bar"
@@ -90,18 +94,18 @@ class SymbolResolverSpec extends AnyFlatSpec {
     val root = JsonSchema.empty.copy(
       id = schemaUriOption,
       properties = Map(
-        "A" -> JsonSchema.empty.copy(
+        "A" -> Right(JsonSchema.empty.copy(
           id = Uri.parseOption("http://example.com/foo"),
           definitions = Map(
-            "B" -> JsonSchema.empty.copy(
+            "B" -> Right(JsonSchema.empty.copy(
               id = Uri.parseOption("http://example.com/foo#bar")
-            )
+            ))
           )
-        )
+        ))
       )
     )
 
-    val result = SymbolResolver.resolve(root)
+    val result = SymbolResolver.resolve(Right(root))
 
     val Some(canonical) = result.get("#/properties/A/definitions/B")
     val expectedId = "http://example.com/foo#bar"
