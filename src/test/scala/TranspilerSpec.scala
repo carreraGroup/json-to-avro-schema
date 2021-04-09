@@ -713,6 +713,44 @@ class TranspilerSpec extends AnyFlatSpec {
     avroSchema should be(expectedRecord)
   }
 
+  it should "sanitize names of boolean" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map("boolean" -> Right(JsonSchema.empty.copy(types = Seq(JsonSchemaBool)))),
+      properties = Map("A" -> Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/boolean")))),
+      required = Seq("A")
+    )
+    val Right(avroSchema) = Transpiler.transpile(Right(root), None)
+
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(
+        AvroField("A", None,
+          AvroRecord("schemaBoolean", None, None, Seq(AvroField("value", None, AvroBool, None, None)))
+          , None, None)
+      ))
+
+    avroSchema should be(expectedRecord)
+  }
+
+  it should "sanitize names of string" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map("string" -> Right(JsonSchema.empty.copy(types = Seq(JsonSchemaString)))),
+      properties = Map("A" -> Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/string")))),
+      required = Seq("A")
+    )
+    val Right(avroSchema) = Transpiler.transpile(Right(root), None)
+
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(
+        AvroField("A", None,
+          AvroRecord("schemaString", None, None, Seq(AvroField("value", None, AvroString, None, None)))
+          , None, None)
+      ))
+
+    avroSchema should be(expectedRecord)
+  }
+
   private def schemaUri =
     Uri.parseOption("http://json-schema.org/draft-06/schema#")
 }

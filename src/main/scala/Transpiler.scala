@@ -31,8 +31,9 @@ object Transpiler {
             case Left(_) => Left(TranspileError(s"Root schema cannot be a boolean."))
             case Right(schema) => resolveDefinitions(schema.definitions, ctx)
           }
-          resolvedRecord = inlineFirstDefinitionReference(record, defs)
-        } yield resolvedRecord
+          inlined = inlineFirstDefinitionReference(record, defs)
+          sanitized = NameSanitizer.sanitize(name)(inlined)
+        } yield sanitized
     }
   }
 
@@ -155,7 +156,7 @@ object Transpiler {
         case Right(schema) =>
           for {
             last <- acc
-            subCtx = Context(definition, None, ctx.symbols)
+            subCtx = ctx.copy(parent = definition, namespace = None)
             // if we have properties, don't wrap the record in another record
             fields <-
               if (schema.properties.nonEmpty)
@@ -193,7 +194,7 @@ object Transpiler {
                   }
               } yield (avroType, default)
             else {
-              val subCtx = Context(prop, None, ctx.symbols)
+              val subCtx = ctx.copy(parent = prop, namespace = None)
               for {
                 record <- transpile(schema.id.map(toName).getOrElse(name), subCtx)
               } yield (record, None)
