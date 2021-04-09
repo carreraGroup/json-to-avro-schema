@@ -1,10 +1,11 @@
 package io.carrera.jsontoavroschema
 
-import SymbolResolver.Symbols
 import Json._
+import SymbolResolver.Symbols
 
 import io.lemonlabs.uri.{AbsoluteUrl, RelativeUrl, Uri}
 
+import scala.annotation.tailrec
 import scala.util.chaining.scalaUtilChainingOps
 
 case class Context(parent: JSchema, namespace: Option[String], symbols: Symbols)
@@ -26,7 +27,12 @@ object Transpiler {
           symbols = SymbolResolver.resolve(normalized)
           ctx = Context(normalized, namespace, symbols)
           record <- transpile(name, ctx)
-        } yield record
+          defs <- ctx.parent match {
+            case Left(_) => Left(TranspileError(s"Root schema cannot be a boolean."))
+            case Right(schema) => resolveDefinitions(schema.definitions, ctx)
+          }
+          resolvedRecord = inlineFirstDefinitionReference(record, defs)
+        } yield resolvedRecord
     }
   }
 
@@ -36,33 +42,73 @@ object Transpiler {
       case Right(schema) =>
         for {
           fields <- resolveFields(ctx)
-          defs <- resolveDefinitions(schema.definitions, ctx)
-          resolvedFields =
-          defs.foldLeft(fields)(replaceFirstReferenceToDefinition)
-        } yield AvroRecord(name, ctx.namespace, schema.desc, resolvedFields)
+        } yield AvroRecord(name, ctx.namespace, schema.desc, fields)
     }
   }
 
-  private def replaceFirstReferenceToDefinition(fields: Seq[AvroField], definition: AvroRecord) = {
-    def isDefRef: PartialFunction[AvroType, Boolean] = {
-      case AvroRef(name) => name == definition.name
-      case AvroUnion(types) => types.exists(isDefRef)
-      case _ => false
+  @tailrec
+  private def inlineFirstDefinitionReference(record: AvroRecord, definitions: Seq[AvroRecord]): AvroRecord = {
+    /**
+     * walks the tree, replacing the first instance of each reference it finds
+     * returns the resolved type and the list of remaining definitions
+     *  */
+    def inlineDefs(`type`: AvroType, definitions: Seq[AvroRecord]): (AvroType, Seq[AvroRecord]) = {
+      `type` match {
+        case AvroRef(name) =>
+          if (definitions.exists(_.name == name))
+            (definitions.filter(_.name == name).head, definitions.filterNot(_.name == name))
+          else {
+            // it could be referencing a property,
+            // in which case the definition already exists
+            (AvroRef(name), definitions)
+          }
+        case AvroUnion(types) =>
+          val (ts, defs) =
+            types.foldLeft((Seq[AvroType](), definitions)) { case ((typeAcc, defs), cur) =>
+              val (t, ds) = inlineDefs(cur, defs)
+              (typeAcc :+ t, ds)
+            }
+          (AvroUnion(ts), defs)
+        case AvroArray(t) =>
+          val (resolvedType, defs) = inlineDefs(t, definitions)
+          (AvroArray(resolvedType), defs)
+        case AvroMap(t) =>
+          val (resolvedType, defs) = inlineDefs(t, definitions)
+          (AvroMap(resolvedType), defs)
+        case AvroRecord(name, ns, doc, fields) =>
+          val (resolvedFields, defs) =
+            fields.foldLeft((Seq[AvroField](), definitions)) { case ((fields, defs), cur) =>
+              val (t, ds) = inlineDefs(cur.`type`, defs)
+              (fields :+ cur.copy(`type` = t), ds)
+            }
+          (AvroRecord(name, ns, doc, resolvedFields), defs)
+        case x => (x, definitions)
+      }
     }
 
-    val idx = fields.indexWhere(f => isDefRef(f.`type`))
-
-    // this allows for unreferenced definitions
-    if (idx == -1)
-      fields
-    else {
-      val field = fields(idx)
-      val resolvedType =
-        field.`type` match {
-          case AvroUnion(types) => AvroUnion(definition +: types.filterNot(isDefRef))
-          case _ => definition
+    // this is a little brute force,
+    // because we walk the tree more than once,
+    // but we need to know, else we'll loop forever
+    // trying to inline a definition that isn't used
+    val isAnyDefReferenced =
+      definitions
+        .exists{ definition =>
+          def isDefRef: PartialFunction[AvroType, Boolean] = {
+            case AvroRef(name) => name == definition.name
+            case AvroUnion(types) => types.exists(isDefRef)
+            case AvroArray(t) => isDefRef(t)
+            case AvroRecord(_, _, _, fields) => fields.exists(f => isDefRef(f.`type`))
+            case _ => false
+          }
+          isDefRef(record)
         }
-      fields.updated(idx, field.copy(`type` = resolvedType))
+
+    if (!isAnyDefReferenced)
+      record
+    else {
+      // given a record, inlineDefs will always return a record, so it's safe to cast it
+      val (resolvedRecord, ds) = inlineDefs(record, definitions)
+      inlineFirstDefinitionReference(resolvedRecord.asInstanceOf[AvroRecord], ds)
     }
   }
 
@@ -91,7 +137,7 @@ object Transpiler {
   private def resolveOneOfField(ctx: Context): Either[TranspileError, Seq[AvroField]] = {
     ctx.parent match {
       case Left(_) => Left(TranspileError("root schema cannot be a boolean schema"))
-      case Right(schema) => {
+      case Right(schema) =>
         val schemas = schema.oneOf
         if (schemas.isEmpty)
           Right(Seq())
@@ -99,7 +145,6 @@ object Transpiler {
           for {
             union <- resolveOneOf("oneOf", schemas, ctx)
           } yield Seq(AvroField("value", schema.desc, union, None, None))
-      }
     }
   }
 

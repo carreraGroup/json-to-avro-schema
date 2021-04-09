@@ -27,6 +27,8 @@ class IntegrationTests extends AnyFlatSpec with TableDrivenPropertyChecks with M
     "siblingRefWithId",
     "definitions",
     "oneof",
+    "array-ref-def",
+    "nestedUnionRefs",
   )
 
   it should "run integration tests" in forAll(tests) { name =>
