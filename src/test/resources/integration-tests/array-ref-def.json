@@ -11,7 +11,7 @@
     }
   },
   "properties": {
-    "Account": {
+    "ArrayHolder": {
       "properties": {
         "subject": {
           "description": "Identifies the entity which incurs the expenses. While the immediate recipients of services or goods might be entities related to the subject, the expenses were ultimately incurred by the subject of the Account.",

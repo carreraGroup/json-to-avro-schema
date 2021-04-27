@@ -1,0 +1,99 @@
+{
+  "type": "record",
+  "name": "SelfReferencing",
+  "namespace":"com.example",
+  "fields": [
+    {
+      "name": "value",
+      "type": [
+        {
+          "type": "record",
+          "name": "Account",
+          "fields": [
+            {
+              "name": "language",
+              "doc": "The base language in which the resource is written.",
+              "type": [
+                "null",
+                "string"
+              ],
+              "default": null
+            },
+            {
+              "name": "_language",
+              "doc":"Extensions for language",
+              "type": [
+                "null",
+                {
+                  "type": "record",
+                  "name": "Element",
+                  "fields": [
+                    {
+                      "name": "extension",
+                      "type": [
+                        "null",
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "record",
+                            "name": "Extension",
+                            "fields": [
+                              {
+                                "name": "extension",
+                                "type": [
+                                  "null",
+                                  {
+                                    "type": "array",
+                                    "items": "Extension"
+                                  }
+                                ],
+                                "default": null
+                              },
+                              {
+                                "name": "circularRef",
+                                "type": [
+                                  "null",
+                                  "Element"
+                                ],
+                                "default": null
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  ]
+                }
+              ],
+              "default": null
+            },
+            {
+              "name": "extension",
+              "doc": "May be used to represent additional information that is not part of the basic definition of the resource.",
+              "type": [
+                "null",
+                {
+                  "type": "array",
+                  "items": "Extension"
+                }
+              ],
+              "default": null
+            }
+          ]
+        },
+        {
+          "type": "record",
+          "name": "DifferentThing",
+          "fields": [
+            {
+              "name": "foo",
+              "type": ["null", "boolean"],
+              "default": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
