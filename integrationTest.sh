@@ -15,7 +15,7 @@ avro_tools="avro-tools-$avro_tools_version.jar"
 if [ ! -f $avro_tools ]; then
     echo "avro-tools not found"
     echo "hang on, we're downloading it..."
-    wget https://mirror.jframeworks.com/apache/avro/avro-$avro_tools_version/java/$avro_tools
+    wget https://ftp.wayne.edu/apache/avro/avro-$avro_tools_version/java/$avro_tools
 fi
 
 echo
