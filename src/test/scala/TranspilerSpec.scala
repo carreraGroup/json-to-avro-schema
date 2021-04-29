@@ -649,6 +649,67 @@ class TranspilerSpec extends AnyFlatSpec {
     avroSchema should equal(expectedRecord)
   }
 
+  it should "properly inline defs given a complex graph of self and circular references" in {
+    val extension = Right(JsonSchema.empty.copy(
+      types = Seq(JsonSchemaArray),
+      items = Seq(Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Extension"))))
+    ))
+
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      definitions = Map(
+        "Element" -> Right(JsonSchema.empty.copy(
+          properties = Map("extension" -> extension),
+          required = Seq("extension")
+        )),
+        "Extension" -> Right(JsonSchema.empty.copy(
+          properties = Map(
+            "extension" -> extension,
+            "elem" -> Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Element")))
+          ),
+          required = Seq("extension", "elem")
+        )),
+        "Account" -> Right(JsonSchema.empty.copy(
+          properties = Map(
+            "_language" -> Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Element"))),
+            "extension" -> extension
+          ),
+          required = Seq("_language", "extension")
+        ))
+      ),
+      oneOf = Seq(
+        Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Account"))),
+        Right(JsonSchema.empty.copy(types = Seq(JsonSchemaString)))
+      )
+    )
+
+    val Right(avroSchema) = Transpiler.transpile(Right(root), None)
+
+    val expectedRecord =
+      AvroRecord("schema", None, None, Seq(
+        AvroField("value", None,
+          AvroUnion(Seq(
+            AvroRecord("Account", None, None, Seq(
+              AvroField("_language", None,
+                AvroRecord("Element", None, None, Seq(
+                  AvroField("extension", None,
+                    AvroArray(AvroRecord("Extension", None, None, Seq(
+                      AvroField("extension", None, AvroArray(AvroRef("Extension")), None, None),
+                      AvroField("elem", None, AvroRef("Element"), None, None)
+                    ))),
+                    None, None)
+                )),
+                None, None),
+              AvroField("extension", None, AvroArray(AvroRef("Extension")), None, None)
+            )),
+            AvroString,
+          ))
+          ,None, None)
+      ))
+
+    avroSchema should be(expectedRecord)
+  }
+
   it should "transpile oneOf at root" in {
     val root =
       JsonSchema.empty.copy(

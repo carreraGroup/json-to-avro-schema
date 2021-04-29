@@ -4,10 +4,10 @@
   "namespace": "com.example",
   "fields": [
     {
-      "name": "Account",
+      "name": "ArrayHolder",
       "type": {
         "type": "record",
-        "name": "Account",
+        "name": "ArrayHolder",
         "fields": [
           {
             "name": "subject",

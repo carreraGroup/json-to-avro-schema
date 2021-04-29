@@ -80,7 +80,16 @@ object Transpiler {
           val (resolvedFields, defs) =
             fields.foldLeft((Seq[AvroField](), definitions)) { case ((fields, defs), cur) =>
               val (t, ds) = inlineDefs(cur.`type`, defs)
-              (fields :+ cur.copy(`type` = t), ds)
+              // do a depth first search to ensure we inline in the proper order
+              val (resolvedType, remainingDefs) =
+                  ds match {
+                    case Nil => (t,ds)
+                    case defs => {
+                      inlineDefs(t, defs)
+                    }
+                  }
+
+              (fields :+ cur.copy(`type` = resolvedType), remainingDefs)
             }
           (AvroRecord(name, ns, doc, resolvedFields), defs)
         case x => (x, definitions)
