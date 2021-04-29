@@ -652,7 +652,7 @@ class TranspilerSpec extends AnyFlatSpec {
   it should "properly inline defs given a complex graph of self and circular references" in {
     val extension = Right(JsonSchema.empty.copy(
       types = Seq(JsonSchemaArray),
-      items = Seq(Right(JsonSchema.empty.copy(ref =  Uri.parseOption("#/definitions/Extension"))))
+      items = Seq(Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Extension"))))
     ))
 
     val root = JsonSchema.empty.copy(
