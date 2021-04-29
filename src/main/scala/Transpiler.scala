@@ -307,8 +307,15 @@ object Transpiler {
       for {
         last <- acc
         str <- cur match {
-          case ujson.Str(s) => Right(s)
-          case v => Left(TranspileError(s"Unimplemented: non-string enums aren't supported yet at $propName. Value: $v"))
+          case ujson.Str(s) =>
+            val sanitized =
+              s.replaceAll("[-|/|\\.]", "_")
+                .replaceAll("<", "LT")
+                .replaceAll(">", "GT")
+                .replaceAll("=", "Eq")
+            Right(sanitized)
+          case v =>
+            Left(TranspileError(s"Unimplemented: non-string enums aren't supported yet at $propName. Value: $v"))
         }
       } yield last :+ str
     } /* json schema enums don't have names, so we build one from it's parent property */

@@ -253,6 +253,36 @@ class TranspilerSpec extends AnyFlatSpec {
     avro should be(expectedRecord)
   }
 
+  it should "sanitize enum symbols" in {
+    val root = JsonSchema.empty.copy(
+      id = schemaUri,
+      properties = Map("someProp" -> Right(JsonSchema.empty.copy(
+        `enum` = Seq(
+          ujson.Str("a-thing-a-ma-bob"),
+          ujson.Str("text/cql"),
+          ujson.Str("Some.thing"),
+          ujson.Str("<"),
+          ujson.Str("<="),
+          ujson.Str(">="),
+          ujson.Str(">"),
+          ujson.Str("="),
+        )
+      ))),
+      required = Seq("someProp")
+    )
+    val Right(avro) = Transpiler.transpile(Right(root), None)
+
+    val expectedRecord =
+      AvroRecord("schema", None, None,
+        Seq(AvroField("someProp", None, AvroEnum("somePropEnum",
+          Seq("a_thing_a_ma_bob", "text_cql", "Some_thing", "LT", "LTEq", "GTEq", "GT", "Eq")),
+          None, None
+        ))
+      )
+
+    avro should be(expectedRecord)
+  }
+
   it should "fail if json enum values are not strings" in {
     /*
      * We should really find a different avro type to transpile to instead.
