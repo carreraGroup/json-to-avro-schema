@@ -317,9 +317,11 @@ object Transpiler {
         str <- cur match {
           case ujson.Str(s) =>
             val sanitized =
-              s.replaceAll("[-|/|\\.]", "_")
+              s.replaceAll("(^[0-9])", "_$1")
+                .replaceAll("[-|/|\\.]", "_")
                 .replaceAll("<", "LT")
                 .replaceAll(">", "GT")
+                .replaceAll("!=", "NotEq")
                 .replaceAll("=", "Eq")
             Right(sanitized)
           case v =>

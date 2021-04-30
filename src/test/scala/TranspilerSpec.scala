@@ -266,6 +266,9 @@ class TranspilerSpec extends AnyFlatSpec {
           ujson.Str(">="),
           ujson.Str(">"),
           ujson.Str("="),
+          ujson.Str("!="),
+          ujson.Str("0"),
+          ujson.Str("n1"), //make sure we only replace numbers if they're the first char
         )
       ))),
       required = Seq("someProp")
@@ -275,7 +278,7 @@ class TranspilerSpec extends AnyFlatSpec {
     val expectedRecord =
       AvroRecord("schema", None, None,
         Seq(AvroField("someProp", None, AvroEnum("schema_someProp",
-          Seq("a_thing_a_ma_bob", "text_cql", "Some_thing", "LT", "LTEq", "GTEq", "GT", "Eq")),
+          Seq("a_thing_a_ma_bob", "text_cql", "Some_thing", "LT", "LTEq", "GTEq", "GT", "Eq", "NotEq", "_0", "n1")),
           None, None
         ))
       )
