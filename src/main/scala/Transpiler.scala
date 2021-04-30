@@ -67,7 +67,15 @@ object Transpiler {
           val (ts, defs) =
             types.foldLeft((Seq[AvroType](), definitions)) { case ((typeAcc, defs), cur) =>
               val (t, ds) = inlineDefs(cur, defs)
-              (typeAcc :+ t, ds)
+              // do a depth first search to ensure we inline in the proper order
+              val (resolvedType, remainingDefs) =
+                ds match {
+                  case Nil => (t,ds)
+                  case defs => {
+                    inlineDefs(t, defs)
+                  }
+                }
+              (typeAcc :+ resolvedType, remainingDefs)
             }
           (AvroUnion(ts), defs)
         case AvroArray(t) =>
