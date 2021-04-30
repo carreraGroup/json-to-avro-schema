@@ -7,7 +7,15 @@
           "a",
           "b"
       ]
+    },
+    "otherProp": {
+      "properties": {
+        "enumProp": {
+          "enum": ["foo"]
+        }
+      },
+      "required": ["enumProp"]
     }
   },
-  "required": ["someProp"]
+  "required": ["someProp", "otherProp"]
 }

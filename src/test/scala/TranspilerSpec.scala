@@ -247,7 +247,7 @@ class TranspilerSpec extends AnyFlatSpec {
 
     val expectedRecord =
       AvroRecord("schema", None, None,
-        Seq(AvroField("someProp", None, AvroEnum("somePropEnum", Seq("a","b")), None, None))
+        Seq(AvroField("someProp", None, AvroEnum("schema_someProp", Seq("a","b")), None, None))
       )
 
     avro should be(expectedRecord)
@@ -274,7 +274,7 @@ class TranspilerSpec extends AnyFlatSpec {
 
     val expectedRecord =
       AvroRecord("schema", None, None,
-        Seq(AvroField("someProp", None, AvroEnum("somePropEnum",
+        Seq(AvroField("someProp", None, AvroEnum("schema_someProp",
           Seq("a_thing_a_ma_bob", "text_cql", "Some_thing", "LT", "LTEq", "GTEq", "GT", "Eq")),
           None, None
         ))
