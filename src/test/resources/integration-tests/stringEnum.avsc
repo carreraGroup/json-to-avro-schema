@@ -7,8 +7,27 @@
       "name": "someProp",
       "type": {
         "type": "enum",
-        "name": "somePropEnum",
+        "name": "StringEnum_someProp",
         "symbols": ["a", "b"]
+      }
+    },
+    {
+      "name": "otherProp",
+      "type": {
+        "type": "record",
+        "name": "otherProp",
+        "fields": [
+          {
+            "name": "enumProp",
+            "type": {
+              "type": "enum",
+              "name": "otherProp_enumProp",
+              "symbols": [
+                "foo"
+              ]
+            }
+          }
+        ]
       }
     }
   ]

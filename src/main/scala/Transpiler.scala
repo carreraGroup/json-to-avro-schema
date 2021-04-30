@@ -8,7 +8,7 @@ import io.lemonlabs.uri.{AbsoluteUrl, RelativeUrl, Uri}
 import scala.annotation.tailrec
 import scala.util.chaining.scalaUtilChainingOps
 
-case class Context(parent: JSchema, namespace: Option[String], symbols: Symbols)
+case class Context(parent: JSchema, parentName: String, namespace: Option[String], symbols: Symbols)
 
 object Transpiler {
   /*
@@ -25,7 +25,7 @@ object Transpiler {
           name <- schema.id.map(toName).toRight(TranspileError("$id must be specified in root schema"))
           normalized <- IdNormalizer.normalizeIds(Right(schema)).left.map(err => TranspileError("Failed to normalize IDs", err))
           symbols = SymbolResolver.resolve(normalized)
-          ctx = Context(normalized, namespace, symbols)
+          ctx = Context(normalized, name, namespace, symbols)
           record <- transpile(name, ctx)
           defs <- ctx.parent match {
             case Left(_) => Left(TranspileError(s"Root schema cannot be a boolean."))
@@ -165,7 +165,7 @@ object Transpiler {
         case Right(schema) =>
           for {
             last <- acc
-            subCtx = ctx.copy(parent = definition, namespace = None)
+            subCtx = ctx.copy(parent = definition, parentName = name, namespace = None)
             // if we have properties, don't wrap the record in another record
             fields <-
               if (schema.properties.nonEmpty)
@@ -203,7 +203,7 @@ object Transpiler {
                   }
               } yield (avroType, default)
             else {
-              val subCtx = ctx.copy(parent = prop, namespace = None)
+              val subCtx = ctx.copy(parent = prop, parentName = name, namespace = None)
               for {
                 record <- transpile(schema.id.map(toName).getOrElse(name), subCtx)
               } yield (record, None)
@@ -251,7 +251,7 @@ object Transpiler {
               }.map(AvroUnion)
             } orElse {
               optionalList(schema.`enum`)
-                .map(resolveEnum(propName, _))
+                .map(resolveEnum(propName, _, ctx))
             } orElse {
               optionalList(schema.oneOf)
                 .map(resolveOneOf(propName, _, ctx))
@@ -302,7 +302,7 @@ object Transpiler {
       }.map(AvroUnion)
   }
 
-  private def resolveEnum(propName: String, value: Seq[ujson.Value]): Either[TranspileError, AvroEnum] =
+  private def resolveEnum(propName: String, value: Seq[ujson.Value], ctx: Context): Either[TranspileError, AvroEnum] =
     value.foldLeft(Right(Seq[String]()).withLeft[TranspileError]) { case (acc, cur) =>
       for {
         last <- acc
@@ -319,7 +319,7 @@ object Transpiler {
         }
       } yield last :+ str
     } /* json schema enums don't have names, so we build one from it's parent property */
-      .map(values => AvroEnum(s"${propName}Enum", values))
+      .map(values => AvroEnum(s"${ctx.parentName}_$propName", values))
 
   private def resolveRefUri(uri: Uri, symbols: Symbols): Either[TranspileError, AvroRef] = {
     symbols.getOrElse(uri, uri) match {
