@@ -22,7 +22,7 @@ object NameSanitizer {
     }
   }
 
-  private def sanitizeName(rootName: String)(name: String):String =
+  def sanitizeName(rootName: String)(name: String):String =
     name match {
       case "boolean" => s"${rootName}Boolean"
       case "string" => s"${rootName}String"

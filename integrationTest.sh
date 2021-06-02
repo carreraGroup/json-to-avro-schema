@@ -20,4 +20,6 @@ fi
 
 echo
 echo "generating java from generated avsc files"
-java -jar $avro_tools compile schema output/*.avsc output/
+java -jar $avro_tools compile schema \
+  output/Reference.avsc output/someBool.avsc output/someRecord.avsc output/ \
+  output/

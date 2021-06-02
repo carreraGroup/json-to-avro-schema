@@ -16,20 +16,7 @@
               "null",
               {
                 "type": "array",
-                "items": {
-                  "type": "record",
-                  "name": "Reference",
-                  "fields": [
-                    {
-                      "name": "id",
-                      "type": [
-                        "null",
-                        "string"
-                      ],
-                      "default": null
-                    }
-                  ]
-                }
+                "items": "Reference"
               }
             ],
             "default": null

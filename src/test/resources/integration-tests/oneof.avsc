@@ -14,30 +14,12 @@
     },
     {
       "name": "bar",
-      "type": {
-        "type": "record",
-        "name": "AA",
-        "fields": [
-          {
-            "name": "value",
-            "type": ["boolean", "long"]
-          }
-        ]
-      }
+      "type": "AA"
     },
     {
       "name": "baz",
       "type": [
-        {
-          "type": "record",
-          "name": "BB",
-          "fields": [
-            {
-              "name": "qux",
-              "type": "string"
-            }
-          ]
-        },
+        "BB",
         "boolean"
       ]
     }

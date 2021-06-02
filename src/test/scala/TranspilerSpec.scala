@@ -410,7 +410,7 @@ class TranspilerSpec extends AnyFlatSpec {
     avro(schemaName).fields.filter(f => f.name == "B").head.`type` should be(AvroRef("AwesomeSchema"))
   }
 
-  it should "inline first definition reference" in {
+  it should "output definitions" in {
     val root = JsonSchema.empty.copy(
       id = schemaUri,
       definitions = Map("A" -> Right(JsonSchema.empty.copy(
@@ -427,7 +427,8 @@ class TranspilerSpec extends AnyFlatSpec {
     val expected = AvroRecord("A", None, None, Seq(
       AvroField("value", None, AvroLong, None, None)
     ))
-    avro(schemaName).fields.filter(f => f.name == "B").head.`type` should be(expected)
+    avro(schemaName).fields.filter(f => f.name == "B").head.`type` should be(AvroRef("A"))
+    avro("A") should be(expected)
   }
 
   it should "reference subsequent definition references by name" in {
@@ -481,7 +482,8 @@ class TranspilerSpec extends AnyFlatSpec {
         AvroField("index", None, AvroLong, None, None)
       )
     )
-    avro(schemaName).fields.filter(f => f.name == "B").head.`type` should be(expected)
+    avro(schemaName).fields.filter(f => f.name == "B").head.`type` should be(AvroRef("A"))
+    avro("A") should be(expected)
   }
 
   it should "successfully transpile if a definition is not referenced" in {
@@ -551,194 +553,6 @@ class TranspilerSpec extends AnyFlatSpec {
       AvroRecord(schemaName, None, None,
         Seq(AvroField("foo", None, AvroUnion(Seq(AvroNull, AvroDouble, AvroString)), Some(ujson.Null), None))
       )
-
-    avroSchema(schemaName) should be(expectedRecord)
-  }
-
-  it should "inline first referenced definition in a union too" in {
-    val root =
-      JsonSchema.empty.copy(
-        id = schemaUri,
-        definitions = Map(
-          "A" -> Right(JsonSchema.empty.copy(
-            properties = Map(
-              "qux" -> Right(JsonSchema.empty.copy(types = Seq(JsonSchemaString)))
-            ),
-            required = Seq("qux")
-          ))
-        ),
-        properties = Map(
-          "foo" -> Right(JsonSchema.empty.copy(
-            oneOf = Seq(
-              Right(JsonSchema.empty.copy(ref =  Uri.parseOption("#/definitions/A"))),
-              Right(JsonSchema.empty.copy(types = Seq(JsonSchemaBool)))
-            )
-          )),
-        ),
-        required = Seq("foo")
-      )
-
-    val Right(avroSchema) = Transpiler.transpile(Right(root), None)
-
-    val expectedRecord =
-      AvroRecord(schemaName, None, None,
-        Seq(AvroField("foo", None,
-            AvroUnion(Seq(
-              AvroRecord("A", None, None, Seq(AvroField("qux", None, AvroString, None, None))),
-              AvroBool,
-            )),
-            None, None
-        ))
-      )
-
-    avroSchema(schemaName) should be(expectedRecord)
-  }
-
-  it should "inline first referenced definition in an array type" in {
-    val root = JsonSchema.empty.copy(
-      id = schemaUri,
-      definitions = Map(
-        "Reference" -> Right(JsonSchema.empty.copy(
-          properties = Map("id" -> Right(JsonSchema.empty.copy(types = Seq(JsonSchemaString)))),
-          required = Seq("id")
-        ))
-      ),
-      properties = Map(
-        "Account" -> Right(JsonSchema.empty.copy(
-          properties = Map(
-            "subject" -> Right(JsonSchema.empty.copy(
-              items = Seq(Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Reference")))),
-              types = Seq(JsonSchemaArray)
-            ))
-          ),
-          required = Seq("subject")
-        ))
-      )
-    )
-
-    val Right(avroSchema) = Transpiler.transpile(Right(root), None)
-
-    val expectedRecord =
-      AvroRecord(schemaName, None, None, Seq(
-          AvroField("Account", None,
-            AvroRecord("Account", None, None, Seq(
-              AvroField("subject", None,
-                AvroArray(
-                  AvroRecord("Reference", None, None, Seq(
-                    AvroField("id", None, AvroString, None, None)
-                  )
-                )
-              ), None, None)
-            ))
-          ,None, None)
-        ))
-
-    avroSchema(schemaName) should equal(expectedRecord)
-  }
-
-  it should "inline first referenced definition in an nested array type" in {
-    val root = JsonSchema.empty.copy(
-      id = schemaUri,
-      definitions = Map(
-        "Reference" -> Right(JsonSchema.empty.copy(
-          properties = Map("id" -> Right(JsonSchema.empty.copy(types = Seq(JsonSchemaString)))),
-          required = Seq("id")
-        )),
-        "Account" -> Right(JsonSchema.empty.copy(
-          properties = Map(
-            "subject" -> Right(JsonSchema.empty.copy(
-              items = Seq(Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Reference")))),
-              types = Seq(JsonSchemaArray)
-            ))
-          ),
-          required = Seq("subject")
-        ))
-      ),
-      oneOf = Seq(
-        Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Account"))),
-        Right(JsonSchema.empty.copy(types = Seq(JsonSchemaString)))
-      )
-    )
-
-    val Right(avroSchema) = Transpiler.transpile(Right(root), None)
-
-    val expectedRecord =
-      AvroRecord(schemaName, None, None, Seq(
-        AvroField("value", None,
-          AvroUnion(Seq(
-            AvroRecord("Account", None, None, Seq(
-              AvroField("subject", None,
-                AvroArray(
-                  AvroRecord("Reference", None, None, Seq(
-                    AvroField("id", None, AvroString, None, None)
-                  ))
-                ), None, None)
-            )),
-            AvroString,
-          ))
-          ,None, None)
-      ))
-
-    avroSchema(schemaName) should equal(expectedRecord)
-  }
-
-  it should "properly inline defs given a complex graph of self and circular references" in {
-    val extension = Right(JsonSchema.empty.copy(
-      types = Seq(JsonSchemaArray),
-      items = Seq(Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Extension"))))
-    ))
-
-    val root = JsonSchema.empty.copy(
-      id = schemaUri,
-      definitions = Map(
-        "Element" -> Right(JsonSchema.empty.copy(
-          properties = Map("extension" -> extension),
-          required = Seq("extension")
-        )),
-        "Extension" -> Right(JsonSchema.empty.copy(
-          properties = Map(
-            "extension" -> extension,
-            "elem" -> Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Element")))
-          ),
-          required = Seq("extension", "elem")
-        )),
-        "Account" -> Right(JsonSchema.empty.copy(
-          properties = Map(
-            "_language" -> Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Element"))),
-            "extension" -> extension
-          ),
-          required = Seq("_language", "extension")
-        ))
-      ),
-      oneOf = Seq(
-        Right(JsonSchema.empty.copy(ref = Uri.parseOption("#/definitions/Account"))),
-        Right(JsonSchema.empty.copy(types = Seq(JsonSchemaString)))
-      )
-    )
-
-    val Right(avroSchema) = Transpiler.transpile(Right(root), None)
-
-    val expectedRecord =
-      AvroRecord(schemaName, None, None, Seq(
-        AvroField("value", None,
-          AvroUnion(Seq(
-            AvroRecord("Account", None, None, Seq(
-              AvroField("_language", None,
-                AvroRecord("Element", None, None, Seq(
-                  AvroField("extension", None,
-                    AvroArray(AvroRecord("Extension", None, None, Seq(
-                      AvroField("extension", None, AvroArray(AvroRef("Extension")), None, None),
-                      AvroField("elem", None, AvroRef("Element"), None, None)
-                    ))),
-                    None, None)
-                )),
-                None, None),
-              AvroField("extension", None, AvroArray(AvroRef("Extension")), None, None)
-            )),
-            AvroString,
-          ))
-          ,None, None)
-      ))
 
     avroSchema(schemaName) should be(expectedRecord)
   }
@@ -818,12 +632,11 @@ class TranspilerSpec extends AnyFlatSpec {
 
     val expectedRecord =
       AvroRecord(schemaName, None, None, Seq(
-        AvroField("A", None,
-          AvroRecord("schemaBoolean", None, None, Seq(AvroField("value", None, AvroBool, None, None)))
-          , None, None)
+        AvroField("A", None, AvroRef("schemaBoolean"), None, None)
       ))
 
     avroSchema(schemaName) should be(expectedRecord)
+    avroSchema("schemaBoolean") should be(AvroRecord("schemaBoolean", None, None, Seq(AvroField("value", None, AvroBool, None, None))))
   }
 
   it should "sanitize names of string" in {
@@ -837,12 +650,11 @@ class TranspilerSpec extends AnyFlatSpec {
 
     val expectedRecord =
       AvroRecord(schemaName, None, None, Seq(
-        AvroField("A", None,
-          AvroRecord("schemaString", None, None, Seq(AvroField("value", None, AvroString, None, None)))
-          , None, None)
+        AvroField("A", None, AvroRef("schemaString"), None, None)
       ))
 
     avroSchema(schemaName) should be(expectedRecord)
+    avroSchema("schemaString") should be(AvroRecord("schemaString", None, None, Seq(AvroField("value", None, AvroString, None, None))))
   }
 
   private def schemaName = "schema"

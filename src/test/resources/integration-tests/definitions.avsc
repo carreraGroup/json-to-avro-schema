@@ -5,16 +5,7 @@
   "fields": [
     {
       "name": "optimize",
-      "type": {
-        "name": "someBool",
-        "type": "record",
-        "fields": [
-          {
-            "name": "value",
-            "type": "boolean"
-          }
-        ]
-      }
+      "type": "someBool"
     },
     {
       "name": "warnings",
@@ -22,20 +13,7 @@
     },
     {
       "name": "applesauce",
-      "type": {
-        "type": "record",
-        "name": "someRecord",
-        "fields": [
-          {
-            "name": "someField",
-            "type": "long"
-          },
-          {
-            "name": "someOtherField",
-            "type": "string"
-          }
-        ]
-      }
+      "type": "someRecord"
     }
   ]
 }
