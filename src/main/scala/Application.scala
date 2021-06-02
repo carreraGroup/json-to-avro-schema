@@ -18,10 +18,10 @@ object Application extends App {
       run(inputFilePath, getNamespace(options)) match {
         case Right(output) =>
           logSuccess("success")
-          output.map { case (name, record) =>
+          output.foreach { case (name, record) =>
             Using(new PrintWriter(new File(s"${getOutputDir(options)}/$name.avsc"))) { writer =>
               writeRecord(record, writer)
-            }
+            }.get
           }
         case Left(err) => logError(err.toString)
       }
