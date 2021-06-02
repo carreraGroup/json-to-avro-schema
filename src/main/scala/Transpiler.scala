@@ -31,6 +31,8 @@ object Transpiler {
             case Left(_) => Left(TranspileError(s"Root schema cannot be a boolean."))
             case Right(schema) => resolveDefinitions(schema.definitions, ctx)
           }
+          //TODO: instead of inlining, just return a Map(name -> AvroRecord)
+          //  so defs.map(d => (d.name -> d)) :+ (record.name -> record) I think
           inlined = inlineFirstDefinitionReference(record, defs)
           sanitized = NameSanitizer.sanitize(name)(inlined)
         } yield sanitized

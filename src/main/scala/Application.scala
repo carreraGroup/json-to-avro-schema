@@ -1,11 +1,13 @@
 package io.carrera.jsontoavroschema
 
+import java.io.{PrintWriter, Writer}
 import scala.io.Source
 import scala.util.Using
 import Console.{GREEN, RED, RESET}
 import scala.annotation.tailrec
 
 object Application extends App {
+  //TODO: also require output directory
   private val usage = "Usage: sbt \"run [-n \"com.example\"] inputFile\""
 
   parseArgs(args.toList) match {
@@ -18,10 +20,14 @@ object Application extends App {
           logError("Must specify inputFile")
           log(usage)
         case Some(inputFilePath) =>
+          //TODO: run should return a map of (name -> obj)
           run(inputFilePath, getNamespace(options)) match {
             case Right(output) =>
               logSuccess("success")
-              println(ujson.write(output, indent = 2))
+              //TODO: for each record, write it's file
+              Using(new PrintWriter(Console.out)) { writer =>
+                writeRecord(output, writer)
+              }
             case Left(err) => logError(err.toString)
           }
       }
@@ -34,6 +40,7 @@ object Application extends App {
       inputJson = readJson(content)
       jsonSchema <- JsonSchemaParser.parse(inputJson)
       _ = logSuccess("parsed")
+      //TODO: change transpile to output a Map(name -> schema)
       avroSchema <- Transpiler.transpile(jsonSchema.schema, namespace)
       outputJson = AvroWriter.toJson(avroSchema)
     } yield outputJson
@@ -43,6 +50,9 @@ object Application extends App {
 
   def loadFile(path: String) =
     Using(Source.fromFile(path))(_.mkString)
+
+  def writeRecord(record: ujson.Obj, out: Writer) =
+    ujson.writeTo(record, out, indent = 2)
 
   def parseArgs(args: List[String]): Either[String, Map[String,String]] = {
     if (args.isEmpty)
