@@ -6,7 +6,7 @@ for f in src/test/resources/integration-tests/*.json; do
     output_name=${input_name%.json}.avsc
     echo
     echo "converting $input_name to $output_name"
-    java -jar target/scala-2.13/json-to-avro-schema-assembly-0.1.jar $f > output/$output_name
+    java -jar target/scala-2.13/json-to-avro-schema-assembly-0.1.jar $f output
 done
 
 avro_tools_version='1.10.2'

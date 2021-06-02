@@ -8,10 +8,10 @@ import scala.util.Success
 
 class ApplicationSpec extends AnyFlatSpec {
 
-  it should "parse args for input file" in {
-    val args = List("filePath")
+  it should "parse required args" in {
+    val args = List("filePath", "outDir")
     val Right(options) = Application.parseArgs(args)
-    options should be(Map("inputFile" -> "filePath"))
+    options should be(Map("inputFile" -> "filePath", "outputDir" -> "outDir"))
   }
 
   it should "require an inputFile" in {
@@ -21,21 +21,23 @@ class ApplicationSpec extends AnyFlatSpec {
   }
 
   it should "parse optional namespace" in {
-    val args = List("--namespace", "com.example", "filePath")
+    val args = List("--namespace", "com.example", "filePath", "outDir")
     val Right(options) = Application.parseArgs(args)
     val expected = Map(
       "inputFile" -> "filePath",
-      "namespace" -> "com.example"
+      "namespace" -> "com.example",
+      "outputDir" -> "outDir",
     )
     options should be(expected)
   }
 
   it should "parse optional short flag namespace" in {
-    val args = List("-n", "com.example", "filePath")
+    val args = List("-n", "com.example", "filePath", "outDir")
     val Right(options) = Application.parseArgs(args)
     val expected = Map(
       "inputFile" -> "filePath",
-      "namespace" -> "com.example"
+      "namespace" -> "com.example",
+      "outputDir" -> "outDir"
     )
     options should be(expected)
   }

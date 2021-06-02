@@ -1,35 +1,29 @@
 package io.carrera.jsontoavroschema
 
-import java.io.{PrintWriter, Writer}
+import java.io.{File, PrintWriter, Writer}
 import scala.io.Source
 import scala.util.Using
 import Console.{GREEN, RED, RESET}
 import scala.annotation.tailrec
 
 object Application extends App {
-  //TODO: also require output directory
-  private val usage = "Usage: sbt \"run [-n \"com.example\"] inputFile\""
+  private val usage = "Usage: sbt \"run [-n \"com.example\"] inputFile outputDir\""
 
   parseArgs(args.toList) match {
     case Left(msg) =>
       logError(msg)
       log(usage)
     case Right(options) =>
-      getInputFilePath(options) match {
-        case None =>
-          logError("Must specify inputFile")
-          log(usage)
-        case Some(inputFilePath) =>
-          //TODO: run should return a map of (name -> obj)
-          run(inputFilePath, getNamespace(options)) match {
-            case Right(output) =>
-              logSuccess("success")
-              //TODO: for each record, write it's file
-              Using(new PrintWriter(Console.out)) { writer =>
-                writeRecord(output, writer)
-              }
-            case Left(err) => logError(err.toString)
+      val inputFilePath = getInputFilePath(options)
+      run(inputFilePath, getNamespace(options)) match {
+        case Right(output) =>
+          logSuccess("success")
+          output.map { case (name, record) =>
+            Using(new PrintWriter(new File(s"${getOutputDir(options)}/$name.avsc"))) { writer =>
+              writeRecord(record, writer)
+            }
           }
+        case Left(err) => logError(err.toString)
       }
   }
 
@@ -40,9 +34,8 @@ object Application extends App {
       inputJson = readJson(content)
       jsonSchema <- JsonSchemaParser.parse(inputJson)
       _ = logSuccess("parsed")
-      //TODO: change transpile to output a Map(name -> schema)
-      avroSchema <- Transpiler.transpile(jsonSchema.schema, namespace)
-      outputJson = AvroWriter.toJson(avroSchema)
+      avroSchemas <- Transpiler.transpile(jsonSchema.schema, namespace)
+      outputJson = avroSchemas.map { case (k, v) => (k, AvroWriter.toJson(v))}
     } yield outputJson
 
   def readJson(content: String) =
@@ -65,16 +58,20 @@ object Application extends App {
   private def parseArgs(args: List[String], accumulator: Map[String, String]): Either[String, Map[String,String]] =
     args match {
       case Nil => Right(accumulator)
-      case filePath :: Nil => Right(accumulator + ("inputFile" -> filePath))
+      case _ :: Nil => Left("outputDir is required")
+      case filePath :: outDir :: Nil => Right(accumulator + ("inputFile" -> filePath) + ("outputDir" -> outDir))
       case ("--namespace" | "-n") :: value :: tail => parseArgs(tail, accumulator + ("namespace" -> value))
       case x :: _ => Left (s"unrecognized option: $x")
     }
 
   private def getInputFilePath(options: Map[String,String]) =
-    options.get("inputFile")
+    options("inputFile")
 
   private def getNamespace(options: Map[String,String]) =
     options.get("namespace")
+
+  private def getOutputDir(options: Map[String,String]) =
+    options("outputDir")
 
   //Everything goes to the error stream so we can write results to stdout
   private def logError(msg: String): Unit =

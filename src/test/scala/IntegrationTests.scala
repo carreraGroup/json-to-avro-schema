@@ -35,6 +35,6 @@ class IntegrationTests extends AnyFlatSpec with TableDrivenPropertyChecks with M
   it should "run integration tests" in forAll(tests) { name =>
     val Right(avro) = Application.run(s"$testFiles$name.json", Some("com.example"))
     val goldenCopy = Application.loadFile(s"$testFiles$name.avsc").get
-    ujson.read(avro) should be(ujson.read(ujson.read(goldenCopy)))
+    ujson.read(avro.head._2) should be(ujson.read(ujson.read(goldenCopy)))
   }
 }

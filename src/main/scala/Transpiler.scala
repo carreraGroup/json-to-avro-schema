@@ -17,7 +17,7 @@ object Transpiler {
    * Internally, we may do this though
    * JsonSchema -> A -> B -> C -> AvroRecord
    */
-  def transpile(schema: JSchema, namespace: Option[String]): Either[TranspileError, AvroRecord] = {
+  def transpile(schema: JSchema, namespace: Option[String]): Either[TranspileError, Map[String, AvroRecord]] = {
     schema match {
       case Left(_) => Left(TranspileError("root schema must be a schema, not a boolean"))
       case Right(schema) =>
@@ -35,7 +35,7 @@ object Transpiler {
           //  so defs.map(d => (d.name -> d)) :+ (record.name -> record) I think
           inlined = inlineFirstDefinitionReference(record, defs)
           sanitized = NameSanitizer.sanitize(name)(inlined)
-        } yield sanitized
+        } yield Map(name -> sanitized)
     }
   }
 

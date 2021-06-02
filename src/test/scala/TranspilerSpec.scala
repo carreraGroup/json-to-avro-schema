@@ -20,20 +20,20 @@ class TranspilerSpec extends AnyFlatSpec {
 
     val expectedRecord =
       AvroRecord(
-        "schema",
+        schemaName,
         None,
         Some("a description"),
         Seq(AvroField("title", Some("a title"), AvroString, None, None))
       )
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "include namespace in root schema" in {
     val root = JsonSchema.empty.copy(id = schemaUri)
     val Right(avroSchema) = Transpiler.transpile(Right(root), Some("com.example"))
-    val expectedRecord = AvroRecord("schema", Some("com.example"), None, Seq())
-    avroSchema should be(expectedRecord)
+    val expectedRecord = AvroRecord(schemaName, Some("com.example"), None, Seq())
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile numbers to doubles" in {
@@ -47,8 +47,8 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(AvroField("maximum", None, AvroDouble, None, None)))
-    avroSchema should be(expectedRecord)
+      AvroRecord(schemaName, None, None, Seq(AvroField("maximum", None, AvroDouble, None, None)))
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile integers to longs" in {
@@ -62,8 +62,8 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(AvroField("length", None, AvroLong, None, None)))
-    avroSchema should be(expectedRecord)
+      AvroRecord(schemaName, None, None, Seq(AvroField("length", None, AvroLong, None, None)))
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile optional values" in {
@@ -76,8 +76,8 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(AvroField("length", None, AvroUnion(Seq(AvroNull, AvroLong)), Some(ujson.Null), None)))
-    avroSchema should be(expectedRecord)
+      AvroRecord(schemaName, None, None, Seq(AvroField("length", None, AvroUnion(Seq(AvroNull, AvroLong)), Some(ujson.Null), None)))
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile booleans to booleans" in {
@@ -88,9 +88,9 @@ class TranspilerSpec extends AnyFlatSpec {
     )
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(AvroField("uniqueItems", None, AvroBool, None, None)))
+      AvroRecord(schemaName, None, None, Seq(AvroField("uniqueItems", None, AvroBool, None, None)))
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile nulls to nulls" in {
@@ -101,9 +101,9 @@ class TranspilerSpec extends AnyFlatSpec {
     )
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(AvroField("applesauce", None, AvroNull, None, None)))
+      AvroRecord(schemaName, None, None, Seq(AvroField("applesauce", None, AvroNull, None, None)))
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile empty schema to bytes" in {
@@ -114,9 +114,9 @@ class TranspilerSpec extends AnyFlatSpec {
     )
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(AvroField("const", None, AvroBytes, None, None)))
+      AvroRecord(schemaName, None, None, Seq(AvroField("const", None, AvroBytes, None, None)))
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile arrays with types" in {
@@ -139,9 +139,9 @@ class TranspilerSpec extends AnyFlatSpec {
     )
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(AvroField("someList", None, AvroArray(AvroString), None, None)))
+      AvroRecord(schemaName, None, None, Seq(AvroField("someList", None, AvroArray(AvroString), None, None)))
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile arrays of any (empty schema) to arrays of bytes" in {
@@ -164,9 +164,9 @@ class TranspilerSpec extends AnyFlatSpec {
     )
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(AvroField("examples", None, AvroArray(AvroBytes), None, None)))
+      AvroRecord(schemaName, None, None, Seq(AvroField("examples", None, AvroArray(AvroBytes), None, None)))
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile arrays of any to arrays of bytes" in {
@@ -182,8 +182,8 @@ class TranspilerSpec extends AnyFlatSpec {
     )
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(AvroField("someList", None, AvroArray(AvroBytes), None, None)))
-    avroSchema should be(expectedRecord)
+      AvroRecord(schemaName, None, None, Seq(AvroField("someList", None, AvroArray(AvroBytes), None, None)))
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile objects to map when properties is not present" in {
@@ -203,8 +203,8 @@ class TranspilerSpec extends AnyFlatSpec {
     )
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(AvroField("someObj", None, AvroMap(AvroString), None, None)))
-    avroSchema should be(expectedRecord)
+      AvroRecord(schemaName, None, None, Seq(AvroField("someObj", None, AvroMap(AvroString), None, None)))
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile objects to records when an properties is present" in {
@@ -230,8 +230,8 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
     val innerRecord = AvroRecord("SomeObj", None, None, Seq(AvroField("Inner", None, AvroLong, None, None)))
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(AvroField("someObj", None, innerRecord, None, None)))
-    avroSchema should be(expectedRecord)
+      AvroRecord(schemaName, None, None, Seq(AvroField("someObj", None, innerRecord, None, None)))
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile string enums" in {
@@ -246,11 +246,11 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avro) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None,
+      AvroRecord(schemaName, None, None,
         Seq(AvroField("someProp", None, AvroEnum("schema_someProp", Seq("a","b")), None, None))
       )
 
-    avro should be(expectedRecord)
+    avro(schemaName) should be(expectedRecord)
   }
 
   it should "sanitize enum symbols" in {
@@ -276,14 +276,14 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avro) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None,
+      AvroRecord(schemaName, None, None,
         Seq(AvroField("someProp", None, AvroEnum("schema_someProp",
           Seq("a_thing_a_ma_bob", "text_cql", "Some_thing", "LT", "LTEq", "GTEq", "GT", "Eq", "NotEq", "_0", "n1")),
           None, None
         ))
       )
 
-    avro should be(expectedRecord)
+    avro(schemaName) should be(expectedRecord)
   }
 
   it should "fail if json enum values are not strings" in {
@@ -311,9 +311,9 @@ class TranspilerSpec extends AnyFlatSpec {
     )
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(AvroField("unionType", None, AvroUnion(Seq(AvroBool, AvroString)), None, None)))
+      AvroRecord(schemaName, None, None, Seq(AvroField("unionType", None, AvroUnion(Seq(AvroBool, AvroString)), None, None)))
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile a record without an id" in {
@@ -333,7 +333,7 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avro) = Transpiler.transpile(Right(root), None)
 
     val expected =
-      AvroRecord("schema", None, None,
+      AvroRecord(schemaName, None, None,
         Seq(
           AvroField("A", None,
             AvroRecord("A", None, None,
@@ -346,7 +346,7 @@ class TranspilerSpec extends AnyFlatSpec {
         )
       )
 
-    avro should be(expected)
+    avro(schemaName) should be(expected)
   }
 
   it should "resolve reference to a record" in {
@@ -369,7 +369,7 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avro) = Transpiler.transpile(Right(root), None)
 
     val expected =
-      AvroRecord("schema", None, None,
+      AvroRecord(schemaName, None, None,
         Seq(
           AvroField("A", None,
             AvroRecord("A", None, None,
@@ -383,7 +383,7 @@ class TranspilerSpec extends AnyFlatSpec {
         )
       )
 
-    avro should be(expected)
+    avro(schemaName) should be(expected)
   }
 
   it should "resolve reference id of a record if available" in {
@@ -407,7 +407,7 @@ class TranspilerSpec extends AnyFlatSpec {
 
     val Right(avro) = Transpiler.transpile(Right(root), None)
 
-    avro.fields.filter(f => f.name == "B").head.`type` should be(AvroRef("AwesomeSchema"))
+    avro(schemaName).fields.filter(f => f.name == "B").head.`type` should be(AvroRef("AwesomeSchema"))
   }
 
   it should "inline first definition reference" in {
@@ -427,7 +427,7 @@ class TranspilerSpec extends AnyFlatSpec {
     val expected = AvroRecord("A", None, None, Seq(
       AvroField("value", None, AvroLong, None, None)
     ))
-    avro.fields.filter(f => f.name == "B").head.`type` should be(expected)
+    avro(schemaName).fields.filter(f => f.name == "B").head.`type` should be(expected)
   }
 
   it should "reference subsequent definition references by name" in {
@@ -449,7 +449,7 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avro) = Transpiler.transpile(Right(root), None)
 
     val expected = AvroRef("A")
-    avro.fields.filter(f => f.name == "C").head.`type` should be(expected)
+    avro(schemaName).fields.filter(f => f.name == "C").head.`type` should be(expected)
   }
 
   it should "handle definitions with properties" in {
@@ -481,7 +481,7 @@ class TranspilerSpec extends AnyFlatSpec {
         AvroField("index", None, AvroLong, None, None)
       )
     )
-    avro.fields.filter(f => f.name == "B").head.`type` should be(expected)
+    avro(schemaName).fields.filter(f => f.name == "B").head.`type` should be(expected)
   }
 
   it should "successfully transpile if a definition is not referenced" in {
@@ -524,11 +524,11 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None,
+      AvroRecord(schemaName, None, None,
         Seq(AvroField("foo", None, AvroUnion(Seq(AvroDouble, AvroString)), None, None))
       )
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile inline non-required oneOf as union" in {
@@ -548,11 +548,11 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None,
+      AvroRecord(schemaName, None, None,
         Seq(AvroField("foo", None, AvroUnion(Seq(AvroNull, AvroDouble, AvroString)), Some(ujson.Null), None))
       )
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "inline first referenced definition in a union too" in {
@@ -581,7 +581,7 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None,
+      AvroRecord(schemaName, None, None,
         Seq(AvroField("foo", None,
             AvroUnion(Seq(
               AvroRecord("A", None, None, Seq(AvroField("qux", None, AvroString, None, None))),
@@ -591,7 +591,7 @@ class TranspilerSpec extends AnyFlatSpec {
         ))
       )
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "inline first referenced definition in an array type" in {
@@ -619,7 +619,7 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(
+      AvroRecord(schemaName, None, None, Seq(
           AvroField("Account", None,
             AvroRecord("Account", None, None, Seq(
               AvroField("subject", None,
@@ -633,7 +633,7 @@ class TranspilerSpec extends AnyFlatSpec {
           ,None, None)
         ))
 
-    avroSchema should equal(expectedRecord)
+    avroSchema(schemaName) should equal(expectedRecord)
   }
 
   it should "inline first referenced definition in an nested array type" in {
@@ -663,7 +663,7 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(
+      AvroRecord(schemaName, None, None, Seq(
         AvroField("value", None,
           AvroUnion(Seq(
             AvroRecord("Account", None, None, Seq(
@@ -679,7 +679,7 @@ class TranspilerSpec extends AnyFlatSpec {
           ,None, None)
       ))
 
-    avroSchema should equal(expectedRecord)
+    avroSchema(schemaName) should equal(expectedRecord)
   }
 
   it should "properly inline defs given a complex graph of self and circular references" in {
@@ -719,7 +719,7 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(
+      AvroRecord(schemaName, None, None, Seq(
         AvroField("value", None,
           AvroUnion(Seq(
             AvroRecord("Account", None, None, Seq(
@@ -740,7 +740,7 @@ class TranspilerSpec extends AnyFlatSpec {
           ,None, None)
       ))
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "transpile oneOf at root" in {
@@ -756,13 +756,13 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None,
+      AvroRecord(schemaName, None, None,
         Seq(
           AvroField("value", None, AvroUnion(Seq(AvroString, AvroDouble)), None, None)
         )
       )
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "ignore boolean schemas in additionalProperties" in {
@@ -782,9 +782,9 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq())
+      AvroRecord(schemaName, None, None, Seq())
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "handle boolean schemas nested in other schemas" in {
@@ -798,13 +798,13 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None,
+      AvroRecord(schemaName, None, None,
         Seq(
           AvroField("A", None, AvroUnion(Seq(AvroBytes)), None, None)
         )
       )
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "sanitize names of boolean" in {
@@ -817,13 +817,13 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(
+      AvroRecord(schemaName, None, None, Seq(
         AvroField("A", None,
           AvroRecord("schemaBoolean", None, None, Seq(AvroField("value", None, AvroBool, None, None)))
           , None, None)
       ))
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
   it should "sanitize names of string" in {
@@ -836,15 +836,17 @@ class TranspilerSpec extends AnyFlatSpec {
     val Right(avroSchema) = Transpiler.transpile(Right(root), None)
 
     val expectedRecord =
-      AvroRecord("schema", None, None, Seq(
+      AvroRecord(schemaName, None, None, Seq(
         AvroField("A", None,
           AvroRecord("schemaString", None, None, Seq(AvroField("value", None, AvroString, None, None)))
           , None, None)
       ))
 
-    avroSchema should be(expectedRecord)
+    avroSchema(schemaName) should be(expectedRecord)
   }
 
+  private def schemaName = "schema"
+
   private def schemaUri =
-    Uri.parseOption("http://json-schema.org/draft-06/schema#")
+    Uri.parseOption(s"http://json-schema.org/draft-06/$schemaName#")
 }
