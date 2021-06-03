@@ -46,16 +46,14 @@ sbt test
 You can run the app from a `sbt` console like this.
 
 ```console
-run [--namespace "com.example"] path/to/inputFile 
+run [--namespace "com.example"] path/to/inputFile path/to/outputDirectory
 ```
 
 You can also do it from the command line by wrapping the command in quotes.
 
 ```console
-sbt "run [--namespace "com.example"] path/to/inputFile"
+sbt "run [--namespace "com.example"] path/to/inputFile path/to/outputDirectory"
 ```
-
-However, the `sbt` output also goes to stdout, so this isn't appropriate for actual generation.
 
 ### Packaging
 
@@ -70,31 +68,10 @@ Which can then be run with `java` or `scala`.
 ### Running
 
 ```console
-$ java -jar target/scala-2.13/json-to-avro-schema-assembly-0.1.jar src/test/resources/simple-schema.json
+$ java -jar target/scala-2.13/json-to-avro-schema-assembly-0.1.jar src/test/resources/simple-schema.json path/to/outputDirectory
 input loaded
 parsed
 success
-{
-  "type": "record",
-  "name": "schema",
-  "fields": [
-    {
-      "name": "title",
-      "type": "string"
-    }
-  ]
-}
-```
-
-`stdout` can be redirected to a file.
-
-```console
-$ java -jar target/scala-2.13/json-to-avro-schema-assembly-0.1.jar src/test/resources/simple-schema.json > success.avsc
-input loaded
-parsed
-success
-$ ls
-success.avsc
 ```
 
 ## Architectural considerations
@@ -110,6 +87,11 @@ we chose the same implementation language.
 Long term, it would be nice to also generate a FHIR to Avro mapper along with the Avro schema definitions.
 Otherwise, we will need to continue manually adjusting the wrapper whenever we change the way the schemas are generated.
 We should do our best to allow for this to be easily implemented later.
+
+The decision was made to output a single `*.avsc` file per definition in the JSON schema
+because of limitations in the AVRO tooling. 
+It doesn't handle large `*.avsc` files well even though we can correctly generate very large schemas.
+This does come at the cost of not being able to process JSON schemas with circular references very well.
 
 <!-- References -->
 [roadmap]: ./docs/Roadmap.md
